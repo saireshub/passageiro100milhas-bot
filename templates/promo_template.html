@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Informativo de Promoção - Passageiro 100 Milhas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      width: 1080px;
+      height: 1350px;
+      font-family: 'Outfit', 'Inter', sans-serif;
+      background: #090d16;
+      color: #ffffff;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    /* Background Glow Effects */
+    .bg-glow-1 {
+      position: absolute;
+      top: -150px;
+      right: -150px;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(243, 112, 33, 0.25) 0%, rgba(9, 13, 22, 0) 70%);
+      z-index: 1;
+    }
+    
+    .bg-glow-2 {
+      position: absolute;
+      bottom: -150px;
+      left: -150px;
+      width: 650px;
+      height: 650px;
+      background: radial-gradient(circle, rgba(11, 59, 114, 0.4) 0%, rgba(9, 13, 22, 0) 70%);
+      z-index: 1;
+    }
+
+    .content {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      height: 100%;
+      padding: 65px 60px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .badge-promo {
+      background: linear-gradient(135deg, #f37021, #ff9f43);
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 24px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 14px 30px;
+      border-radius: 50px;
+      box-shadow: 0 10px 25px rgba(243, 112, 33, 0.4);
+    }
+
+    .badge-category {
+      background: rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(12px);
+      padding: 12px 24px;
+      border-radius: 30px;
+      font-weight: 700;
+      font-size: 18px;
+      color: #e2e8f0;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* Main Card */
+    .main-card {
+      background: rgba(18, 24, 38, 0.85);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 36px;
+      padding: 45px 42px;
+      margin: 15px 0;
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+    }
+
+    .transfer-flow {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 25px;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 18px 30px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .program-name {
+      font-size: 32px;
+      font-weight: 800;
+      color: #ffffff;
+    }
+
+    .arrow-icon {
+      font-size: 36px;
+      color: #ff8c3b;
+      font-weight: 900;
+    }
+
+    .bonus-highlight {
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    .bonus-label {
+      font-size: 20px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #94a3b8;
+    }
+
+    .bonus-value {
+      font-size: 98px;
+      font-weight: 900;
+      line-height: 1;
+      background: linear-gradient(135deg, #f37021, #ffbd59);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -3px;
+      margin-top: 8px;
+    }
+
+    /* Rules Grid */
+    .rules-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin-top: 25px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      padding-top: 22px;
+    }
+
+    .rule-box {
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 20px;
+      padding: 18px 22px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .rule-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+
+    .rule-desc {
+      font-size: 22px;
+      font-weight: 800;
+      color: #ffffff;
+    }
+
+    /* Footer Bar with Bottom-Right Logo */
+    .footer-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .footer-info-group {
+      flex: 1;
+      background: rgba(18, 24, 38, 0.88);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 28px;
+      padding: 22px 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .info-label {
+      font-size: 15px;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+    }
+
+    .verdict-badge {
+      font-size: 18px;
+      font-weight: 800;
+      padding: 6px 18px;
+      border-radius: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      background: rgba(243, 112, 33, 0.2);
+      color: #ff8c3b;
+      border: 1px solid rgba(243, 112, 33, 0.4);
+    }
+
+    .validity-value {
+      font-size: 18px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    /* Bottom-Right Logo Card */
+    .bottom-logo-card {
+      background: #ffffff;
+      padding: 16px 26px;
+      border-radius: 28px;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .bottom-logo-card svg {
+      width: 290px;
+      height: 98px;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-glow-1"></div>
+  <div class="bg-glow-2"></div>
+
+  <div class="content">
+    <!-- Header -->
+    <div class="header">
+      <div class="badge-promo">
+        🔥 Promoção de Bônus
+      </div>
+      <div class="badge-category">
+        📊 Estratégia de Milhas
+      </div>
+    </div>
+
+    <!-- Main Content Card -->
+    <div class="main-card">
+      <div class="transfer-flow">
+        <div class="program-name">{{ origem_programa | default("LIVELO", true) }}</div>
+        <div class="arrow-icon">➔</div>
+        <div class="program-name">{{ destino_programa | default("LATAM PASS", true) }}</div>
+      </div>
+
+      <div class="bonus-highlight">
+        <div class="bonus-label">Bônus Máximo de Transferência</div>
+        <div class="bonus-value">ATÉ {{ bonus_maximo | default("100%", true) }}</div>
+      </div>
+
+      <div class="rules-grid">
+        <div class="rule-box">
+          <div class="rule-title">Assinantes Clube</div>
+          <div class="rule-desc">{{ bonus_clube | default("100% de Bônus", true) }}</div>
+        </div>
+        
+        <div class="rule-box">
+          <div class="rule-title">Demais Clientes</div>
+          <div class="rule-desc">{{ bonus_geral | default("50% de Bônus", true) }}</div>
+        </div>
+
+        <div class="rule-box">
+          <div class="rule-title">Transferência Mínima</div>
+          <div class="rule-desc">{{ min_transferencia | default("10.000 pontos", true) }}</div>
+        </div>
+
+        <div class="rule-box">
+          <div class="rule-title">Validade do Bônus</div>
+          <div class="rule-desc">{{ validade_pontos | default("24 meses", true) }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer Bar with Bottom-Right Logo -->
+    <div class="footer-bar">
+      <!-- Left Info Box -->
+      <div class="footer-info-group">
+        <div class="info-row">
+          <div class="info-label">Veredito:</div>
+          <div class="verdict-badge">{{ veredito | default("EXCELENTE", true) }}</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">Válido até:</div>
+          <div class="validity-value">{{ data_validade | default("15 de Outubro", true) }}</div>
+        </div>
+      </div>
+
+      <!-- Prominent Bottom-Right Logo -->
+      <div class="bottom-logo-card">
+        <svg viewBox="0 0 720 280" xmlns="http://www.w3.org/2000/svg">
+          <path d="M 230 115 C 330 75, 385 130, 410 110 C 445 80, 440 35, 410 40 C 375 45, 395 105, 450 125 C 475 135, 490 140, 510 145" 
+                fill="none" stroke="#063b71" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
+
+          <g transform="translate(485, 40)">
+            <path d="M 75 0 C 33.5 0, 0 33.5, 0 75 C 0 118, 62 182, 70 190 C 72.8 192.8, 77.2 192.8, 80 190 C 88 182, 150 118, 150 75 C 150 33.5, 116.5 0, 75 0 Z" fill="#f37021" />
+            <circle cx="75" cy="75" r="48" fill="#ffffff" />
+            <g transform="translate(24, 46) rotate(-16)">
+              <rect x="0" y="0" width="88" height="46" rx="7" fill="#ffffff" stroke="#063b71" stroke-width="4" />
+              <line x1="12" y1="12" x2="52" y2="12" stroke="#063b71" stroke-width="3.5" stroke-linecap="round" />
+              <rect x="35" y="18" width="16" height="16" rx="2" fill="#ffffff" stroke="#f37021" stroke-width="2" />
+              <line x1="39" y1="22" x2="47" y2="30" stroke="#f37021" stroke-width="2" stroke-linecap="round" />
+              <line x1="47" y1="22" x2="39" y2="30" stroke="#f37021" stroke-width="2" stroke-linecap="round" />
+              <line x1="12" y1="23" x2="30" y2="23" stroke="#063b71" stroke-width="3" stroke-linecap="round" />
+              <rect x="12" y="31" width="40" height="7" rx="2" fill="#f37021" />
+              <line x1="62" y1="0" x2="62" y2="46" stroke="#063b71" stroke-width="2.5" stroke-dasharray="4,3" />
+              <line x1="68" y1="12" x2="68" y2="34" stroke="#063b71" stroke-width="2" />
+              <line x1="73" y1="12" x2="73" y2="34" stroke="#063b71" stroke-width="3" />
+              <line x1="77" y1="12" x2="77" y2="34" stroke="#063b71" stroke-width="1.5" />
+              <line x1="81" y1="12" x2="81" y2="34" stroke="#063b71" stroke-width="2.5" />
+            </g>
+          </g>
+
+          <g transform="translate(595, 45) rotate(42)">
+            <path d="M 0 -45 C 6 -45, 12 -38, 12 -25 L 13 -10 L 52 0 L 52 14 L 13 8 L 10 35 L 28 48 L 28 58 L 0 52 L -28 58 L -28 48 L -10 35 L -13 8 L -52 14 L -52 0 L -13 -10 L -12 -25 C -12 -38, -6 -45, 0 -45 Z" fill="#063b71" />
+            <path d="M -5 -32 C 0 -36, 5 -36, 6 -32 C 4 -30, -3 -30, -5 -32 Z" fill="#ffffff" />
+          </g>
+
+          <text x="20" y="172" font-family="'Outfit', sans-serif" font-weight="900" font-size="82" fill="#063b71" letter-spacing="-1.5">Passageiro</text>
+          <text x="18" y="248" font-family="'Outfit', sans-serif" font-weight="900" font-size="84" fill="#f37021" letter-spacing="-1.5">100 Milhas</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

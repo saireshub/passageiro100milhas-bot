@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 220" width="500" height="220">
+  <defs>
+    <style>
+      .text-white { font-family: 'Outfit', 'Montserrat', 'Arial Black', sans-serif; font-weight: 900; font-size: 52px; fill: #ffffff; }
+      .text-orange { font-family: 'Outfit', 'Montserrat', 'Arial Black', sans-serif; font-weight: 900; font-size: 54px; fill: #ff7b25; }
+      .stroke-cyan { stroke: #00f2fe; stroke-width: 4; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+      .fill-cyan { fill: #00f2fe; }
+      .fill-orange { fill: #ff7b25; }
+      .fill-white { fill: #ffffff; }
+    </style>
+  </defs>
+
+  <!-- Contrail Swoosh Loop -->
+  <path d="M 180 115 C 240 70, 270 125, 290 115 C 315 105, 325 80, 305 75 C 285 70, 280 95, 325 118" class="stroke-cyan" stroke-width="4.5" />
+
+  <!-- Orange Location Pin -->
+  <g transform="translate(325, 45)">
+    <!-- Pin Body -->
+    <path d="M 50 0 C 22.4 0, 0 22.4, 0 50 C 0 80, 42 122, 47 127 C 48.6 128.7, 51.4 128.7, 53 127 C 58 122, 100 80, 100 50 C 100 22.4, 77.6 0, 50 0 Z" class="fill-orange" />
+    
+    <!-- White Inner Circle -->
+    <circle cx="50" cy="50" r="32" class="fill-white" />
+
+    <!-- Boarding Pass / Ticket inside Pin -->
+    <g transform="translate(18, 30) rotate(-15)">
+      <rect x="0" y="0" width="58" height="30" rx="5" fill="#ffffff" stroke="#0b3b72" stroke-width="3" />
+      <line x1="10" y1="8" x2="35" y2="8" stroke="#0b3b72" stroke-width="2.5" stroke-linecap="round" />
+      <line x1="10" y1="15" x2="28" y2="15" stroke="#0b3b72" stroke-width="2" stroke-linecap="round" />
+      <line x1="10" y1="22" x2="32" y2="22" stroke="#ff7b25" stroke-width="2" stroke-linecap="round" />
+      <line x1="42" y1="0" x2="42" y2="30" stroke="#0b3b72" stroke-width="1.5" stroke-dasharray="3,2" />
+      <!-- Barcode lines -->
+      <line x1="46" y1="8" x2="46" y2="22" stroke="#0b3b72" stroke-width="1.5" />
+      <line x1="50" y1="8" x2="50" y2="22" stroke="#0b3b72" stroke-width="2" />
+      <line x1="53" y1="8" x2="53" y2="22" stroke="#0b3b72" stroke-width="1" />
+    </g>
+  </g>
+
+  <!-- Cyan Airplane flying out -->
+  <g transform="translate(385, 25) rotate(42)">
+    <path d="M 0 -25 L 7 -10 L 32 -4 L 32 4 L 7 2 L 6 18 L 16 25 L 16 30 L 0 27 L -16 30 L -16 25 L -6 18 L -7 2 L -32 4 L -32 -4 L -7 -10 Z" class="fill-cyan" />
+  </g>
+
+  <!-- Text: Passageiro -->
+  <text x="25" y="125" class="text-white">Passageiro</text>
+  
+  <!-- Text: 100 Milhas -->
+  <text x="25" y="180" class="text-orange">100 Milhas</text>
+</svg>

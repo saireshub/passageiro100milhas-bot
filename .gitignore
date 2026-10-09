@@ -1,0 +1,24 @@
+# Ambientes virtuais
+venv/
+.venv/
+env/
+
+# Configurações locais e chaves de API
+.env
+.env.local
+
+# Cache Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Mídias temporárias geradas
+output/post_*.png
+scratch/
+
+# IDE e sistema
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

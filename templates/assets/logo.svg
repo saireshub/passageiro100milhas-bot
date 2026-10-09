@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 280" width="720" height="280">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@800;900&amp;display=swap');
+      .brand-title {
+        font-family: 'Outfit', 'Montserrat', 'Arial Black', sans-serif;
+        font-weight: 900;
+        font-size: 82px;
+        fill: #063b71;
+        letter-spacing: -1.5px;
+      }
+      .brand-sub {
+        font-family: 'Outfit', 'Montserrat', 'Arial Black', sans-serif;
+        font-weight: 900;
+        font-size: 84px;
+        fill: #f37021;
+        letter-spacing: -1.5px;
+      }
+    </style>
+  </defs>
+
+  <!-- Looping Blue Contrail Line -->
+  <!-- Starts above 'eiro', loops upward and connects to the pin -->
+  <path d="M 230 115 C 330 75, 385 130, 410 110 C 445 80, 440 35, 410 40 C 375 45, 395 105, 450 125 C 475 135, 490 140, 510 145" 
+        fill="none" 
+        stroke="#063b71" 
+        stroke-width="6" 
+        stroke-linecap="round" 
+        stroke-linejoin="round" />
+
+  <!-- Orange Pin Location Group -->
+  <g transform="translate(485, 40)">
+    <!-- Location Pin Shape -->
+    <path d="M 75 0 C 33.5 0, 0 33.5, 0 75 C 0 118, 62 182, 70 190 C 72.8 192.8, 77.2 192.8, 80 190 C 88 182, 150 118, 150 75 C 150 33.5, 116.5 0, 75 0 Z" 
+          fill="#f37021" />
+    
+    <!-- White Inner Circle -->
+    <circle cx="75" cy="75" r="48" fill="#ffffff" />
+
+    <!-- Boarding Pass / Ticket inside Pin -->
+    <g transform="translate(24, 46) rotate(-16)">
+      <!-- Ticket body -->
+      <rect x="0" y="0" width="88" height="46" rx="7" fill="#ffffff" stroke="#063b71" stroke-width="4" />
+      
+      <!-- Top header line -->
+      <line x1="12" y1="12" x2="52" y2="12" stroke="#063b71" stroke-width="3.5" stroke-linecap="round" />
+      
+      <!-- Middle flight line with X box -->
+      <rect x="35" y="18" width="16" height="16" rx="2" fill="#ffffff" stroke="#f37021" stroke-width="2" />
+      <line x1="39" y1="22" x2="47" y2="30" stroke="#f37021" stroke-width="2" stroke-linecap="round" />
+      <line x1="47" y1="22" x2="39" y2="30" stroke="#f37021" stroke-width="2" stroke-linecap="round" />
+      
+      <line x1="12" y1="23" x2="30" y2="23" stroke="#063b71" stroke-width="3" stroke-linecap="round" />
+      
+      <!-- Bottom orange solid stripe -->
+      <rect x="12" y="31" width="40" height="7" rx="2" fill="#f37021" />
+      
+      <!-- Perforated separator -->
+      <line x1="62" y1="0" x2="62" y2="46" stroke="#063b71" stroke-width="2.5" stroke-dasharray="4,3" />
+      
+      <!-- Barcode stub lines -->
+      <line x1="68" y1="12" x2="68" y2="34" stroke="#063b71" stroke-width="2" />
+      <line x1="73" y1="12" x2="73" y2="34" stroke="#063b71" stroke-width="3" />
+      <line x1="77" y1="12" x2="77" y2="34" stroke="#063b71" stroke-width="1.5" />
+      <line x1="81" y1="12" x2="81" y2="34" stroke="#063b71" stroke-width="2.5" />
+    </g>
+  </g>
+
+  <!-- Blue Airplane flying out towards upper right -->
+  <g transform="translate(595, 45) rotate(42)">
+    <!-- Airplane Body & Wings -->
+    <path d="M 0 -45 
+             C 6 -45, 12 -38, 12 -25 
+             L 13 -10 
+             L 52 0 
+             L 52 14 
+             L 13 8 
+             L 10 35 
+             L 28 48 
+             L 28 58 
+             L 0 52 
+             L -28 58 
+             L -28 48 
+             L -10 35 
+             L -13 8 
+             L -52 14 
+             L -52 0 
+             L -13 -10 
+             L -12 -25 
+             C -12 -38, -6 -45, 0 -45 Z" 
+          fill="#063b71" />
+    
+    <!-- White Cockpit Windshield Arc -->
+    <path d="M -5 -32 C 0 -36, 5 -36, 6 -32 C 4 -30, -3 -30, -5 -32 Z" fill="#ffffff" />
+  </g>
+
+  <!-- Text: Passageiro -->
+  <text x="20" y="172" class="brand-title">Passageiro</text>
+  
+  <!-- Text: 100 Milhas -->
+  <text x="18" y="248" class="brand-sub">100 Milhas</text>
+</svg>
