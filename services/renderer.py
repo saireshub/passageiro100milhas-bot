@@ -15,10 +15,27 @@ class HeadlessRenderer:
         self.chromium_binary = self._find_chromium_binary()
 
     def _find_chromium_binary(self) -> str:
-        """Localiza o executável do Chromium / chrome-headless-shell sem dependência de DLLs C-extensions"""
+        """Localiza o executável do Chromium / chrome-headless-shell para Windows e Linux/Docker"""
+        # 1. Variável de ambiente explícita
+        env_chromium = os.getenv("CHROMIUM_PATH")
+        if env_chromium and os.path.exists(env_chromium):
+            logger.info(f"Usando Chromium configurado em CHROMIUM_PATH: {env_chromium}")
+            return env_chromium
+
+        # 2. Caminhos padrão Linux / Docker
+        linux_paths = [
+            "/usr/bin/chromium",
+            "/usr/bin/chromium-browser",
+            "/usr/bin/google-chrome",
+            "/usr/bin/google-chrome-stable",
+        ]
+        for path in linux_paths:
+            if os.path.exists(path):
+                logger.info(f"Usando Chromium Linux detectado: {path}")
+                return path
+
+        # 3. Caminhos padrão Windows
         local_app_data = os.getenv("LOCALAPPDATA", "")
-        
-        # 1. Procura o chrome-headless-shell instalado pelo Playwright
         playwright_pattern = os.path.join(
             local_app_data, "ms-playwright", "chromium_headless_shell-*", "chrome-headless-shell-win64", "chrome-headless-shell.exe"
         )
@@ -27,13 +44,11 @@ class HeadlessRenderer:
             logger.info(f"Usando Chromium Headless Shell do Playwright: {matches[0]}")
             return matches[0]
 
-        # 2. Alternativa: Microsoft Edge oficial
         edge_path = r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
         if os.path.exists(edge_path):
             logger.info(f"Usando Microsoft Edge executável: {edge_path}")
             return edge_path
 
-        # 3. Alternativa: Google Chrome
         chrome_path = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
         if os.path.exists(chrome_path):
             logger.info(f"Usando Google Chrome executável: {chrome_path}")
