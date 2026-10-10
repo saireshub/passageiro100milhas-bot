@@ -26,3 +26,11 @@ Este documento registra os aprendizados técnicos, escolhas de arquitetura e sol
 ## 4. Experiência de Uso (Telegram CMS & Human-in-the-Loop)
 * **Desafio:** Evitar publicações acidentais ou com erros de digitação.
 * **Aprendizado:** Adicionar uma etapa obrigatoriamente intermediária no Telegram, onde o bot renderiza a arte final e exibe uma prévia com botões inline (`[🚀 Confirmar e Publicar]` e `[❌ Cancelar]`), garante total controle operacional antes de enviar para as redes sociais.
+
+---
+
+## 5. Escolha de Nuvem e Dimensionamento (Render vs. Azure vs. Coolify)
+* **Render Free:** O limite de 750 horas mensais compartilhadas impede rodar 2 serviços ao mesmo tempo e hiberna aplicações sem tráfego HTTP após 15 minutos.
+* **Oracle Cloud:** Processo de cadastro possui barreiras rígidas de validação de cartão e fraud prevention que dificultam a criação da conta.
+* **Coolify em VM pequena:** Exige no mínimo 2 GB a 4 GB de RAM para não sofrer OOM (Out of Memory). Em máquinas de 1 GB de RAM (como a B1s gratuita do Azure), é muito mais leve e estável gerenciar múltiplos containers diretamente via **Docker Compose**.
+* **Azure for Students:** Mostrou-se a opção mais viável por conceder US$ 100 sem cartão e 750h/mês de VM Linux B1s gratuita, permitindo manter o bot 24/7 durante 1 ano.
