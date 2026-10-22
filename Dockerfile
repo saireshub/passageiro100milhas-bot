@@ -1,35 +1,59 @@
-# Imagem base oficial Python 3.11 Slim
-FROM python:3.11-slim
+# syntax=docker/dockerfile:1
 
-# Evita criação de arquivos .pyc e garante logs em tempo real
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONIOENCODING=utf-8
+# ==============================================================================
+# 1. Build Stage: Compilação e isolamento do virtualenv Python
+# ==============================================================================
+FROM python:3.11-slim AS build
+WORKDIR /src
 
-# Instala Chromium e pacotes de fontes para renderização nítida de textos e emojis
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Cria ambiente virtual isolado
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Instalação com cache mount do BuildKit e bind mount do requirements.txt
+RUN --mount=type=bind,source=requirements.txt,target=requirements.txt \
+    --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-compile -r requirements.txt
+
+# ==============================================================================
+# 2. Runtime Stage: Imagem de produção enxuta, segura e não-root
+# ==============================================================================
+FROM python:3.11-slim AS runtime
+WORKDIR /app
+
+# Variáveis de ambiente Python
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONIOENCODING=utf-8 \
+    CHROMIUM_PATH=/usr/bin/chromium \
+    PATH="/opt/venv/bin:$PATH"
+
+# Instala Chromium e fontes com cache mounts do BuildKit
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y --no-install-recommends \
     chromium \
     fonts-liberation \
     fonts-dejavu-core \
     fonts-noto-color-emoji \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+    ca-certificates
 
-# Define o caminho padrão do Chromium para o renderizador
-ENV CHROMIUM_PATH=/usr/bin/chromium
+# Criação de usuário e grupo não-root dedicados
+RUN addgroup --system --gid 1001 appgroup && \
+    adduser --system --uid 1001 --ingroup appgroup appuser
 
-# Define o diretório de trabalho
-WORKDIR /app
+# Garante a existência do diretório de saída com permissão de escrita para appuser
+RUN mkdir -p /app/output && chown -R appuser:appgroup /app/output
 
-# Instala dependências do Python
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Copia virtualenv e código-fonte com ownership já atribuído
+COPY --from=build --chown=appuser:appgroup /opt/venv /opt/venv
+COPY --chown=appuser:appgroup . .
 
-# Copia o código do projeto
-COPY . .
+# Metadados OCI
+LABEL org.opencontainers.image.title="Passageiro 100 Milhas Bot" \
+      org.opencontainers.image.description="Bot Telegram e gerador de criativos para Instagram/Meta Graph API"
 
-# Garante a existência do diretório de saída
-RUN mkdir -p /app/output
+# Execução segura em modo não-root
+USER appuser
 
-# Executa o bot
-CMD ["python", "main.py"]
+ENTRYPOINT ["python", "main.py"]

@@ -93,10 +93,11 @@ passageiro100milhas-bot/
 ├── templates/                    # Templates visuais dos posts (HTML/CSS)
 │   ├── trecho_template.html      # Template para Alerta de Trecho (Milhas)
 │   └── promo_template.html       # Template para Informativo de Promoção
+├── .dockerignore                 # Exclusão de arquivos do contexto de build
 ├── .env.example                  # Modelo de variáveis de ambiente
 ├── config.py                     # Leitura e validação das variáveis do .env
 ├── Dockerfile                    # Receita da imagem Docker (Python + Chromium)
-├── docker-compose.yml            # Orquestração do serviço do bot
+├── compose.yaml                  # Orquestração moderna do serviço do bot
 ├── main.py                       # Ponto de entrada do sistema
 ├── README.md                     # Apresentação do repositório
 └── requirements.txt              # Dependências do projeto

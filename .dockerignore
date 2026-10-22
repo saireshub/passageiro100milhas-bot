@@ -1,0 +1,52 @@
+# syntax=docker/dockerfile:1
+
+# Controle de Versão
+.git/
+.gitignore
+
+# CI/CD e IDEs
+.github/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Documentação e Relatórios Internos
+*.md
+LICENSE
+docs/
+scratch/
+
+# Arquivos Docker
+Dockerfile*
+compose.yaml
+compose.*.yaml
+docker-compose*.yml
+docker-compose*.yaml
+.dockerignore
+
+# Segredos e Variáveis de Ambiente
+.env
+.env.*
+*.pem
+*.key
+
+# Ambientes Python e Caches
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+
+# Logs e Saídas Temporárias
+*.log
+output/*
+!output/.gitkeep
+
+# Arquivos de Sistema
+.DS_Store
+Thumbs.db

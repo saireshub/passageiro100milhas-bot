@@ -26,7 +26,7 @@ Este documento define as personas especializadas, limites de escopo (*guardrails
 
 ### 2.4 🚢 Especialista em DevOps & Infraestrutura
 - **Responsabilidade:** Manutenção do ambiente Docker, otimização de imagem, scripts de deploy na VM Azure e controle de recursos (RAM e swap).
-- **Escopo Autorizado:** `Dockerfile`, `docker-compose.yml`, documentação de infraestrutura em `docs/ARCHITECTURE.md`.
+- **Escopo Autorizado:** `Dockerfile`, `compose.yaml`, `.dockerignore`, documentação de infraestrutura em `docs/ARCHITECTURE.md`.
 - **Restrição:** Manter o consumo compatível com a VM B1s (1 vCPU, 1 GB RAM).
 
 ---

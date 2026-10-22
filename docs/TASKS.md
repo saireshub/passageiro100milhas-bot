@@ -14,7 +14,8 @@
 - [ ] Concluir migração da conta do Instagram para perfil Profissional/Criador.
 - [ ] Vincular a Página correspondente no Facebook.
 - [ ] Configurar aplicativo no Meta for Developers e aprovar escopo `instagram_content_publish`.
-- [ ] Gerar Token de Acesso de Longa Duração (60 dias) e preencher no `.env`.
+- [x] Gerar Token de Acesso da Meta e preencher no `.env` (configurado token que não expira).
+- [ ] Criar e configurar a bio oficial para o Instagram e Facebook (alinhada à identidade visual e Beacons).
 - [ ] Obter credenciais do Azure for Students e provisionar VM `Standard_B1s` Ubuntu 24.04.
 
 ### Fase 2: Templates Visuais & Renderização
@@ -48,5 +49,5 @@
 - [x] Avaliação técnica e seleção de provedor de hospedagem (Azure for Students VM B1s vs Render vs Oracle).
 - [x] Criação do bot Telegram via `@BotFather` e obtenção do `TELEGRAM_BOT_TOKEN`.
 - [x] Estruturação modular inicial (`services/telegram_bot.py`, `services/renderer.py`, `services/meta_api.py`, `config.py`).
-- [x] Criação do `Dockerfile` e `docker-compose.yml` para suporte a Python e Chromium.
+- [x] Criação e padronização de `Dockerfile` (multi-stage/non-root), `compose.yaml` e `.dockerignore` alinhados às skills Docker.
 - [x] Elaboração das regras do sistema e convenção de commits em português.
