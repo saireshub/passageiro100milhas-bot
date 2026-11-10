@@ -13,7 +13,7 @@ from telegram.ext import (
 from config import Config
 from services.renderer import renderer
 from services.meta_api import meta_api
-from services.ocr_extractor import ocr_extractor
+from services.gemini_service import gemini_service
 from services.storage_service import storage_service
 
 logger = logging.getLogger(__name__)
@@ -80,7 +80,7 @@ def format_promo_caption(data: dict) -> str:
     return (
         f"🔥 PROMOÇÃO: {data.get('origem_programa', 'LIVELO')} ➔ {data.get('destino_programa', 'LATAM PASS')}\n\n"
         f"Bônus máximo: até {data.get('bonus_maximo', '100%')}\n"
-        f"Validade: até {data.get('data_validade', '15 de Outubro')}\n\n"
+        f"Validade: {data.get('data_validade', 'até 15 de Outubro')}\n\n"
         f"📌 REGRAS BÁSICAS:\n"
         f"• {data.get('bonus_clube', '100%')} para assinantes do Clube\n"
         f"• {data.get('bonus_geral', '50%')} para demais clientes\n"
@@ -94,12 +94,13 @@ def format_promo_caption(data: dict) -> str:
 @admin_only
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     welcome_text = (
-        "✈️ *Bem-vindo ao Bot Passageiro 100 Milhas!*\n\n"
-        "Este bot é o seu painel de controle administrativo para criação e publicação de posts no Instagram/Facebook.\n\n"
-        "*Comandos disponíveis:*\n"
-        "🔹 `/trecho` - Gerar Alerta de Trecho (Ex: GRU ✈ CDG)\n"
-        "🔹 `/promo` - Gerar Informativo de Promoção de Milhas\n"
-        "📸 *Foto:* Envie o print de uma passagem/promoção para extração automática via OCR."
+        "✈️ *Painel Passageiro 100 Milhas*\n\n"
+        "Envie uma imagem ou um texto para criar o post automaticamente com o Google Gemini:\n\n"
+        "📸 *Envie um Print:* Foto da passagem ou banner da promoção.\n"
+        "✍️ *Envie um Texto:* Cole o texto da promoção ou os dados do voo.\n\n"
+        "*Comandos manuais de demonstração:*\n"
+        "🔹 `/trecho` - Gerar Alerta de Trecho (Exemplo)\n"
+        "🔹 `/promo` - Gerar Informativo de Promoção (Exemplo)\n"
     )
     await update.message.reply_text(welcome_text, parse_mode="Markdown")
 
@@ -120,35 +121,7 @@ async def trecho_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "companhia": "LATAM Airlines",
         "datas": "Outubro a Novembro/2026",
     }
-    
-    # 1. Renderiza a imagem PNG via Chromium CLI / Headless
-    image_path = await renderer.render_trecho(data)
-    caption = format_trecho_caption(data)
-    
-    post_id = f"post_{os.path.basename(image_path)}"
-    PENDING_POSTS[post_id] = {
-        "image_path": image_path,
-        "caption": caption,
-        "data": data
-    }
-    
-    # 2. Cria os botões inline de aprovação
-    keyboard = [
-        [
-            InlineKeyboardButton("🚀 Confirmar e Publicar", callback_data=f"pub_{post_id}"),
-            InlineKeyboardButton("❌ Cancelar", callback_data=f"can_{post_id}")
-        ]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    
-    # 3. Envia a prévia para o Telegram
-    with open(image_path, 'rb') as photo:
-        await update.message.reply_photo(
-            photo=photo,
-            caption=f"👁️ *PRÉVIA DO POST GERADO*\n\n{caption}",
-            parse_mode="Markdown",
-            reply_markup=reply_markup
-        )
+    await _render_and_send_preview(update, data, "trecho")
 
 @admin_only
 async def promo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -166,17 +139,25 @@ async def promo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "veredito": "EXCELENTE",
         "data_validade": "15 de Outubro"
     }
-    
-    image_path = await renderer.render_promo(data)
-    caption = format_promo_caption(data)
-    
+    await _render_and_send_preview(update, data, "promo")
+
+async def _render_and_send_preview(update: Update, data: dict, tipo: str):
+    """Renderiza a imagem correspondente e envia para prévia com botões inline"""
+    if tipo == "promo":
+        image_path = await renderer.render_promo(data)
+        caption = format_promo_caption(data)
+    else:
+        image_path = await renderer.render_trecho(data)
+        caption = format_trecho_caption(data)
+
     post_id = f"post_{os.path.basename(image_path)}"
     PENDING_POSTS[post_id] = {
         "image_path": image_path,
         "caption": caption,
-        "data": data
+        "data": data,
+        "tipo": tipo
     }
-    
+
     keyboard = [
         [
             InlineKeyboardButton("🚀 Confirmar e Publicar", callback_data=f"pub_{post_id}"),
@@ -184,11 +165,11 @@ async def promo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    
+
     with open(image_path, 'rb') as photo:
         await update.message.reply_photo(
             photo=photo,
-            caption=f"👁️ *PRÉVIA DO POST GERADO*\n\n{caption}",
+            caption=f"👁️ *PRÉVIA DO POST GERADO ({tipo.upper()})*\n\n{caption}",
             parse_mode="Markdown",
             reply_markup=reply_markup
         )
@@ -219,7 +200,7 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.edit_message_caption(caption=f"❌ *Erro no upload da imagem:* `{e}`", parse_mode="Markdown")
             return
 
-        await query.edit_message_caption(caption="⏳ Imagem carregada na nuvem. Publicando no Instagram via Meta Graph API...")
+        await query.edit_message_caption(caption="⏳ Imagem na nuvem. Publicando no Instagram via Meta Graph API...")
         
         # 2. Chama a Meta Graph API passando a URL pública
         res = meta_api.publish_photo(image_url, post_info["caption"])
@@ -240,18 +221,46 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @admin_only
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Processa fotos enviadas para o bot extraindo texto via OCR"""
-    await update.message.reply_text("🔍 Recebi sua imagem. Analisando via OCR...")
+    """Processa fotos enviadas para o bot extraindo dados via Google Gemini Vision"""
+    await update.message.reply_text("🔍 Recebi sua imagem. Analisando com o Google Gemini Vision...")
     
     photo_file = await update.message.photo[-1].get_file()
     image_bytes = await photo_file.download_as_bytearray()
     
-    extracted_text = ocr_extractor.extract_text_from_bytes(bytes(image_bytes))
+    data = gemini_service.extract_from_image(bytes(image_bytes))
     
-    if extracted_text:
-        await update.message.reply_text(f"📝 *Texto extraído da imagem:*\n\n`{extracted_text[:1000]}`", parse_mode="Markdown")
+    if data and isinstance(data, dict):
+        tipo = data.get("tipo", "trecho")
+        await update.message.reply_text(f"✨ Dados extraídos com sucesso ({tipo.upper()})! Gerando o design do post...")
+        await _render_and_send_preview(update, data, tipo)
     else:
-        await update.message.reply_text("⚠️ Não foi possível extrair dados da imagem ou as chaves de OCR (Gemini/DeepSeek) não estão configuradas no `.env`.")
+        await update.message.reply_text(
+            "⚠️ *Não foi possível extrair dados da imagem com o Gemini.*\n\n"
+            "Verifique se a sua chave `GEMINI_API_KEY` no arquivo `.env` é válida (obtida em https://aistudio.google.com/app/apikey).",
+            parse_mode="Markdown"
+        )
+
+@admin_only
+async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Processa mensagens de texto informando dados de voo ou promoção via Gemini"""
+    user_text = update.message.text
+    if not user_text or user_text.startswith("/"):
+        return
+
+    await update.message.reply_text("🤖 Analisando o texto da promoção com o Google Gemini...")
+    
+    data = gemini_service.extract_from_text(user_text)
+    
+    if data and isinstance(data, dict):
+        tipo = data.get("tipo", "promo")
+        await update.message.reply_text(f"✨ Promoção identificada ({tipo.upper()})! Gerando o design do post...")
+        await _render_and_send_preview(update, data, tipo)
+    else:
+        await update.message.reply_text(
+            "⚠️ *Não foi possível interpretar os dados do texto com o Gemini.*\n\n"
+            "Verifique se o texto contém dados de emissão/promoção ou se a sua chave `GEMINI_API_KEY` no `.env` é válida.",
+            parse_mode="Markdown"
+        )
 
 def setup_telegram_bot() -> Application:
     """Inicializa o bot do Telegram com todos os handlers e verificações"""
@@ -267,5 +276,6 @@ def setup_telegram_bot() -> Application:
     app.add_handler(CommandHandler("promo", promo_command))
     app.add_handler(CallbackQueryHandler(callback_handler))
     app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
     
     return app

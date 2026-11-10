@@ -12,16 +12,14 @@ class Config:
     
     # Armazenamento Azure Blob (para disponibilização pública de imagens à Meta API)
     AZURE_STORAGE_CONNECTION_STRING: str = os.getenv("AZURE_STORAGE_CONNECTION_STRING", "")
-    AZURE_STORAGE_CONTAINER_NAME: str = os.getenv("AZURE_STORAGE_CONTAINER_NAME", "posts")
+    AZURE_STORAGE_CONTAINER_NAME: str = os.getenv("AZURE_STORAGE_CONTAINER_NAME", "passageiro100milhasbot")
     
     # Meta Graph API (Instagram & Facebook - suporta chaves com prefixo FB ou META)
     META_ACCESS_TOKEN: str = os.getenv("META_ACCESS_TOKEN") or os.getenv("FB_PAGE_ACCESS_TOKEN", "")
     INSTAGRAM_ACCOUNT_ID: str = os.getenv("INSTAGRAM_ACCOUNT_ID") or os.getenv("FB_PAGE_ID", "")
     
-    # Inteligência Artificial / OCR
+    # Inteligência Artificial / OCR (Google Gemini)
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
-    DEEPSEEK_API_KEY: str = os.getenv("DEEPSEEK_API_KEY", "")
-    DEEPSEEK_API_URL: str = os.getenv("DEEPSEEK_API_URL", "https://api.deepseek.com/v1/ocr")
     
     # Diretórios do Sistema
     BASE_DIR: str = os.path.dirname(os.path.abspath(__file__))

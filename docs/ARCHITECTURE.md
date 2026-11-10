@@ -67,7 +67,7 @@ sequenceDiagram
 | **Renderização Gráfica** | Chromium CLI Headless | Captura precisa de layouts web modernos em alta resolução (1080x1350px). |
 | **Hospedagem das Imagens** | Azure Blob Storage | Armazenamento de alta disponibilidade com geração de URLs SAS temporárias (24h). |
 | **Publicação Externa** | Meta Graph API (Instagram Business) | Endpoints oficiais para publicação no feed sem risco de bloqueios. |
-| **Extração Inteligente (OCR)** | Google Gemini / DeepSeek API | Extração estruturada a partir de prints de tela. |
+| **Extração Inteligente (IA)** | Google Gemini (Multimodal Vision & Text) | Extração estruturada (JSON) a partir de prints de tela (fotos) e textos de promoções. |
 | **Contêineres & Orquestração**| Azure Container Apps (ACA) | Execução serverless 24/7 sem necessidade de gerenciar VMs, SO ou patches. |
 | **Registro de Imagens** | Azure Container Registry (ACR) | Repositório privado da imagem Docker integrada ao pipeline de deploy. |
 | **Integração Contínua (CI/CD)**| GitHub Actions | Compilação da imagem Docker e push automatizado a cada `git push` na branch `main`. |

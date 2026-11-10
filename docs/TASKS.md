@@ -41,3 +41,6 @@
 - [x] Provisionamento do Azure Container Apps `app-passageiro100milhas` (0.5 vCPU, 1.0 GiB RAM, Ingress desabilitado).
 - [x] Configuração da esteira de CI/CD automatizada no GitHub Actions (`.github/workflows/deploy.yml`).
 - [x] Injeção segura de variáveis de ambiente no Container App e início da execução contínua 24/7.
+- [x] Remoção do script legado `bot-deepseek-imagem.py` e descontinuação do DeepSeek em favor do Google Gemini.
+- [x] Criação do serviço `services/gemini_service.py` com extração multimodal (suporte para prints de voos e textos de promoções).
+- [x] Integração de handlers no `services/telegram_bot.py` para fotos e mensagens de texto com prévia e aprovação inline.
