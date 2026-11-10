@@ -66,11 +66,11 @@ sequenceDiagram
 | **Motor de Templates** | Jinja2 | Injeção dinâmica de variáveis em templates HTML/CSS sem dependências externas. |
 | **Renderização Gráfica** | Chromium CLI Headless | Captura precisa de layouts web modernos em alta resolução (1080x1350px). |
 | **Hospedagem das Imagens** | Azure Blob Storage | Armazenamento de alta disponibilidade com geração de URLs SAS temporárias (24h). |
-| **Publicação Externa** | Meta Graph API (Instagram Business) | Endpoints oficiais para publicação no feed sem risco de bloqueios. |
+| **Publicação Externa** | Meta Graph API (Instagram & Facebook) | Endpoints oficiais para publicação simultânea (crossposting) no feed do Instagram e na Página do Facebook. |
 | **Extração Inteligente (IA)** | Google Gemini (Multimodal Vision & Text) | Extração estruturada (JSON) a partir de prints de tela (fotos) e textos de promoções. |
 | **Contêineres & Orquestração**| Azure Container Apps (ACA) | Execução serverless 24/7 sem necessidade de gerenciar VMs, SO ou patches. |
 | **Registro de Imagens** | Azure Container Registry (ACR) | Repositório privado da imagem Docker integrada ao pipeline de deploy. |
-| **Integração Contínua (CI/CD)**| GitHub Actions | Compilação da imagem Docker e push automatizado a cada `git push` na branch `main`. |
+| **Integração Contínua (CI/CD)**| GitHub Actions & Docker Buildx | Compilação com cache GHA e geração automática de tags imutáveis (:sha-xxxxxxx e :latest). |
 
 ---
 
@@ -135,12 +135,19 @@ A esteira de deploy automático opera através do arquivo [`.github/workflows/de
 ```text
 [Desenvolvedor] ── git push origin main ──> [GitHub Actions Runner]
                                                    │
-                                                   ├─► 1. Checkout do código
-                                                   ├─► 2. Setup Docker Buildx
+                                                   ├─► 1. Checkout do código (actions/checkout@v4)
+                                                   ├─► 2. Setup Docker Buildx (docker/setup-buildx-action@v3)
                                                    ├─► 3. Login no ACR (crpassageiro100milhas.azurecr.io)
-                                                   ├─► 4. Compilação multi-stage da imagem
-                                                   └─► 5. Push para o ACR (tag :latest)
-                                                                 │
-                                                                 ▼
-                                                  [Azure Container Apps Atualiza Imagem]
+                                                   ├─► 4. Extração de tags via docker/metadata-action@v5
+                                                   │      ├── :sha-<commit_curto> (tag imutável e única)
+                                                   │      ├── :latest (ponteiro de conveniência)
+                                                   │      └── :main (branch de produção)
+                                                   ├─► 5. Compilação com injeção de COMMIT_SHA e cache BuildKit (gha)
+                                                   └─► 6. Push automatizado para o Azure Container Registry
 ```
+
+### Estratégia de Versionamento e Tags Docker
+Seguindo as melhores práticas oficiais da documentação do Docker (`docker-build-strategies`):
+1. **Tags Imutáveis (`:sha-xxxxxxx`):** Cada commit gera uma imagem com identificador único baseado no commit SHA do Git, garantindo rastreabilidade exata e prevenindo problemas de cache em nós do Azure Container Apps.
+2. **Injeção de Metadados (`COMMIT_SHA`):** O commit SHA é injetado como variável de ambiente no container em tempo de build, permitindo que o bot informe sua versão exata em tempo de execução através do comando `/status` no Telegram.
+3. **Cache BuildKit GitHub Actions (`type=gha`):** As camadas do Dockerfile são cacheadas nativamente entre execuções do workflow, reduzindo o tempo de compilação de minutos para segundos.

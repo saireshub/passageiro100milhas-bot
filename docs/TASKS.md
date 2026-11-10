@@ -45,3 +45,6 @@
 - [x] Criação do serviço `services/gemini_service.py` com extração multimodal (suporte para prints de voos e textos de promoções).
 - [x] Integração de handlers no `services/telegram_bot.py` para fotos e mensagens de texto com prévia e aprovação inline.
 - [x] Otimização e compressão de imagens via Pillow, retorno forçado em JSON puro (`responseMimeType`) e comando `/status`.
+- [x] Auto-resolução da conta do Instagram Business (@passageiro100milhas) e crossposting simultâneo para Instagram Feed e Página do Facebook.
+- [x] Correção do Chromium no Docker com `--user-data-dir` temporário em `/tmp` e `HOME=/home/appuser`.
+- [x] Automação oficial de tags Docker via `docker/metadata-action` com SHA do Git e cache BuildKit (`type=gha`).

@@ -18,8 +18,8 @@ from services.storage_service import storage_service
 
 logger = logging.getLogger(__name__)
 
-# Versão do deploy para rastreio no chat
-BOT_VERSION = "2026.11.10-gemini-v6"
+# Versão do deploy gerada automaticamente a partir do commit do Git
+BOT_VERSION = f"sha-{os.getenv('COMMIT_SHA', 'dev')[:7]}"
 
 # Armazenamento em memória dos posts pendentes de aprovação
 PENDING_POSTS = {}

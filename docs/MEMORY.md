@@ -53,4 +53,5 @@
 | Chromium CLI `Failed to create headless user data directory` | Usuário não-root no Docker sem pasta HOME ou `--user-data-dir` | Adicionado `--user-data-dir` dinâmico em `/tmp`, `HOME=/home/appuser` e permissão no Dockerfile. |
 | Meta API `Unsupported post request / Object ID does not exist` | Usou FB_PAGE_ID em vez de INSTAGRAM_ACCOUNT_ID no endpoint /media | Auto-resolução do Instagram Business Account ID (`17841467398304099`) via Graph API a partir do Page ID. |
 | Crossposting Instagram & Facebook | O endpoint anterior só publicava no Instagram | Implementado envio simultâneo para Instagram Feed e Facebook Page (`/{page_id}/photos`). |
+| Cache travado de `:latest` no Container Apps | Nós do Azure não re-baixam `:latest` se já existir no disco | Automação com `docker/metadata-action` gerando tags `:sha-xxxxxxx` únicas e imutáveis a cada commit. |
 | Injeção acidental em templates | Dados com caracteres especiais digitados no Telegram | Ativar `autoescape=True` no Jinja2 e sanitizar campos de texto. |

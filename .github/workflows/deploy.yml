@@ -24,12 +24,25 @@ jobs:
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
 
-      - name: 4. Compilar e Enviar Imagem Docker
+      - name: 4. Extrair Metadados e Tags Automáticas (Docker)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: crpassageiro100milhas.azurecr.io/passageiro100milhas-bot
+          tags: |
+            type=sha,format=short,prefix=sha-
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: 5. Compilar e Enviar Imagem Docker
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: |
-            crpassageiro100milhas.azurecr.io/passageiro100milhas-bot:latest
-            crpassageiro100milhas.azurecr.io/passageiro100milhas-bot:v6
-            crpassageiro100milhas.azurecr.io/passageiro100milhas-bot:${{ github.sha }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            COMMIT_SHA=${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
