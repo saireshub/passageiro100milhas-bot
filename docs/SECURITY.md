@@ -22,6 +22,8 @@ def is_authorized(user_id: int) -> bool:
 
 ### 2.1 Política de Chaves e Tokens
 - **Proibição Absoluta de Hardcoding:** É estritamente proibido inserir tokens, chaves de API, senhas ou IDs confidenciais diretamente no código-fonte.
+- **Proteção em Trânsito e Logs:** Chaves e tokens são enviados exclusivamente via cabeçalhos HTTP (`x-goog-api-key` e `Authorization: Bearer`) ou corpo POST — nunca em parâmetros de URL (*query strings*). Mensagens de erro passam por mascaramento para impedir vazamentos em logs ou no Telegram.
+- **Saída Segura no `/status`:** O comando administrativo `/status` exibe exclusivamente indicadores operacionais booleanos (ex: `✅ Operacional`), versão de build (`sha-xxxxxxx`) e runtime Python — nunca prefixos de tokens, IDs de contas, nomes de containers ou caminhos de sistema de arquivos.
 - **Arquivo `.env`:** O arquivo `.env` deve constar obrigatoriamente no `.gitignore` e nunca ser enviado para o repositório Git.
 - **Arquivo `.env.example`:** Mantido versionado contendo apenas as chaves com valores fictícios/exemplo para guiar novos deploys.
 

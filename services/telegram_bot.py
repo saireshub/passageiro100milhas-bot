@@ -1,5 +1,6 @@
 import os
 import logging
+import platform
 from functools import wraps
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
@@ -50,10 +51,7 @@ def admin_only(func):
                 await update.callback_query.answer("⛔ Acesso não autorizado.", show_alert=True)
             elif update.message:
                 await update.message.reply_text(
-                    "⛔ *Acesso Restrito!*\n\n"
-                    "Este bot é o painel de administração privado do *Passageiro 100 Milhas*.\n\n"
-                    f"Seu ID Telegram: `{user_id}` não possui permissão de acesso.\n"
-                    "Para liberar seu acesso, adicione este ID na variável `TELEGRAM_USER_ID` do arquivo `.env`.",
+                    "⛔ *Acesso Restrito.*\nEste bot é de uso privado da administração.",
                     parse_mode="Markdown"
                 )
             return
@@ -101,7 +99,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "📸 *Envie um Print:* Foto da passagem ou banner da promoção.\n"
         "✍️ *Envie um Texto:* Cole o texto da promoção ou os dados do voo.\n\n"
         "*Comandos disponíveis:*\n"
-        "🔹 `/status` - Diagnóstico do sistema e variáveis de ambiente\n"
+        "🔹 `/status` - Status operacional do sistema\n"
         "🔹 `/trecho` - Gerar Alerta de Trecho (Exemplo)\n"
         "🔹 `/promo` - Gerar Informativo de Promoção (Exemplo)\n"
     )
@@ -109,29 +107,30 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @admin_only
 async def status_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Exibe o status do contêiner e a verificação das integrações"""
-    gemini_key = Config.GEMINI_API_KEY
-    gemini_status = f"✅ Ativa (`{gemini_key[:8]}...`)" if gemini_key and len(gemini_key) > 10 else "❌ Não configurada"
+    """Exibe o status operacional do bot e das integrações sem expor dados sensíveis"""
+    gemini_ok = bool(Config.GEMINI_API_KEY and len(Config.GEMINI_API_KEY) > 10)
+    blob_ok = bool(Config.AZURE_STORAGE_CONNECTION_STRING)
+    meta_configured = meta_api.is_configured()
+    ig_ok = bool(meta_api.get_instagram_business_account_id()) if meta_configured else False
+
+    gemini_status = "✅ Operacional" if gemini_ok else "❌ Não configurada"
+    blob_status = "✅ Operacional" if blob_ok else "❌ Não configurada"
     
-    blob_conn = Config.AZURE_STORAGE_CONNECTION_STRING
-    blob_status = f"✅ Configurada (Container: `{Config.AZURE_STORAGE_CONTAINER_NAME}`)" if blob_conn else "❌ Não configurada"
-    
-    meta_token = Config.META_ACCESS_TOKEN
-    ig_id = meta_api.get_instagram_business_account_id()
-    if ig_id:
-        meta_status = f"✅ Conectado (@passageiro100milhas - `{ig_id}`)"
-    elif meta_token:
-        meta_status = f"⚠️ Token ativo (`{meta_token[:8]}...`), mas Instagram não vinculado"
+    if ig_ok:
+        meta_status = "✅ Conectado (Instagram & Facebook)"
+    elif meta_configured:
+        meta_status = "⚠️ Token ativo (conta não vinculada)"
     else:
-        meta_status = "⚠️ Simulação (Credenciais não configuradas)"
+        meta_status = "⚠️ Modo Simulação"
 
     status_msg = (
-        f"📊 *STATUS DO SISTEMA* (`{BOT_VERSION}`)\n\n"
-        f"🤖 *Google Gemini:* {gemini_status}\n"
-        f"☁️ *Azure Blob Storage:* {blob_status}\n"
-        f"📸 *Instagram Business:* {meta_status}\n"
-        f"👤 *Admin Telegram ID:* `{Config.TELEGRAM_USER_ID}`\n"
-        f"📁 *Saída de Imagens:* `{Config.OUTPUT_DIR}`"
+        f"📊 *STATUS DO SISTEMA*\n\n"
+        f"🏷️ *Versão:* `{BOT_VERSION}`\n"
+        f"🐍 *Runtime:* `Python {platform.python_version()}`\n"
+        f"🤖 *Extração IA:* {gemini_status}\n"
+        f"☁️ *Armazenamento Nuvem:* {blob_status}\n"
+        f"📱 *Redes Sociais:* {meta_status}\n"
+        f"🛡️ *Controle de Acesso:* Ativo"
     )
     await update.message.reply_text(status_msg, parse_mode="Markdown")
 

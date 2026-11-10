@@ -90,12 +90,17 @@ class GeminiService:
             logger.error(msg)
             return None, msg
 
+        headers = {
+            "Content-Type": "application/json",
+            "x-goog-api-key": self.api_key
+        }
+
         errors = []
         for model in self.models:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={self.api_key}"
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
             try:
                 logger.info(f"Tentando extração com Gemini modelo: {model}")
-                response = requests.post(url, json=payload, timeout=30)
+                response = requests.post(url, headers=headers, json=payload, timeout=30)
                 
                 if response.status_code == 200:
                     data = response.json()
@@ -108,15 +113,16 @@ class GeminiService:
                             if parsed:
                                 return parsed, ""
                             else:
-                                err = f"Modelo {model} respondeu, mas falhou ao decodificar JSON: {text_response[:200]}"
+                                err = f"Modelo {model} respondeu, mas falhou ao decodificar JSON."
                                 errors.append(err)
                                 continue
                 else:
-                    err = f"Modelo {model} retornou status {response.status_code}: {response.text[:200]}"
-                    logger.warning(err)
+                    err = f"Modelo {model} retornou status {response.status_code}"
+                    logger.warning(f"{err}: {response.text[:200]}")
                     errors.append(err)
             except requests.RequestException as e:
-                err = f"Timeout ou falha de rede no modelo {model}: {e}"
+                safe_err = str(e).replace(self.api_key, "***") if self.api_key else str(e)
+                err = f"Timeout ou falha de rede no modelo {model}: {safe_err}"
                 logger.warning(err)
                 errors.append(err)
 

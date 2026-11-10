@@ -22,6 +22,13 @@ class MetaGraphAPI:
     def configured_ig_id(self) -> str:
         return Config.INSTAGRAM_ACCOUNT_ID
 
+    def _safe_error(self, err: Exception) -> str:
+        msg = str(err)
+        return msg.replace(self.access_token, "***") if self.access_token else msg
+
+    def _auth_headers(self) -> dict:
+        return {"Authorization": f"Bearer {self.access_token}"}
+
     def get_instagram_business_account_id(self) -> str | None:
         """
         Garante a obtenção do ID da conta do Instagram Business (@passageiro100milhas).
@@ -38,11 +45,8 @@ class MetaGraphAPI:
         # 1. Verifica se já é conta de Instagram ou busca a vinculada
         try:
             test_url = f"{self.base_url}/{target_id}"
-            params = {
-                "fields": "id,username,instagram_business_account",
-                "access_token": self.access_token
-            }
-            res = requests.get(test_url, params=params, timeout=15)
+            params = {"fields": "id,username,instagram_business_account"}
+            res = requests.get(test_url, params=params, headers=self._auth_headers(), timeout=15)
             if res.status_code == 200:
                 data = res.json()
                 if "instagram_business_account" in data and "id" in data["instagram_business_account"]:
@@ -54,7 +58,7 @@ class MetaGraphAPI:
                     self._resolved_ig_id = target_id
                     return target_id
         except Exception as e:
-            logger.warning(f"Erro ao verificar ID da Meta: {e}")
+            logger.warning(f"Erro ao verificar ID da Meta: {self._safe_error(e)}")
 
         # Fallback para o ID configurado
         return target_id
@@ -90,11 +94,11 @@ class MetaGraphAPI:
 
             # 2. Polling de prontidão
             status_url = f"{self.base_url}/{creation_id}"
-            status_params = {"fields": "status_code", "access_token": self.access_token}
+            status_params = {"fields": "status_code"}
             
             for attempt in range(1, 15):
                 time.sleep(3)
-                status_res = requests.get(status_url, params=status_params, timeout=15)
+                status_res = requests.get(status_url, params=status_params, headers=self._auth_headers(), timeout=15)
                 status_data = status_res.json()
                 status_code = status_data.get("status_code")
                 if status_code == "FINISHED" or status_code is None:
@@ -114,8 +118,9 @@ class MetaGraphAPI:
             return {"status": "success", "id": pub_data["id"], "username": "passageiro100milhas"}
 
         except Exception as e:
-            logger.error(f"Erro publicando no Instagram: {e}", exc_info=True)
-            return {"status": "error", "error": str(e)}
+            safe_err = self._safe_error(e)
+            logger.error(f"Erro publicando no Instagram: {safe_err}", exc_info=True)
+            return {"status": "error", "error": safe_err}
 
     def publish_to_facebook(self, image_url: str, caption: str) -> dict:
         """Publica a imagem diretamente na Página do Facebook (Passageiro100Milhas)"""
@@ -145,8 +150,9 @@ class MetaGraphAPI:
             }
 
         except Exception as e:
-            logger.error(f"Erro publicando no Facebook: {e}", exc_info=True)
-            return {"status": "error", "error": str(e)}
+            safe_err = self._safe_error(e)
+            logger.error(f"Erro publicando no Facebook: {safe_err}", exc_info=True)
+            return {"status": "error", "error": safe_err}
 
     def publish_photo(self, image_url: str, caption: str) -> dict:
         """

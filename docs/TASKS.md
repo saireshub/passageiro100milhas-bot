@@ -53,3 +53,4 @@
 - [x] Revisão geral, limpeza de arquivos e dependências não utilizadas (`playwright`, `fastapi`, `uvicorn`, `ocr_extractor.py`, `output/test_headless.png`).
 - [x] Hardening e higiene: ativação de `autoescape=True` no Jinja2 e limpeza automática de arquivos `.png` temporários após postagem/cancelamento.
 - [x] Sincronização completa da documentação oficial do projeto (`ARCHITECTURE.md`, `MEMORY.md`, `SECURITY.md`, `TASKS.md`).
+- [x] Hardening de privacidade e logs: remoção de dados sensíveis do `/status`, resposta minimalista a não autorizados e envio de chaves API apenas via HTTP headers (`x-goog-api-key` e `Bearer`).
