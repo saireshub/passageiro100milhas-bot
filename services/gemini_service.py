@@ -1,8 +1,11 @@
 import os
+import io
+import re
 import json
 import base64
 import logging
 import requests
+from PIL import Image
 from config import Config
 
 logger = logging.getLogger(__name__)
@@ -15,7 +18,7 @@ Classifique o conteúdo em uma de duas categorias:
 1) "trecho": Alerta de emissão de passagem aérea / bilhete com milhas.
 2) "promo": Informativo de promoção de bônus de transferência ou acúmulo de pontos/milhas entre programas.
 
-Retorne EXCLUSIVAMENTE um objeto JSON válido, sem texto explicativo adicional.
+Retorne EXCLUSIVAMENTE um objeto JSON válido.
 
 ---
 Se for "trecho", use esta estrutura:
@@ -54,26 +57,45 @@ Caso a informação não esteja explícita na imagem/texto, deduza pelo contexto
 class GeminiService:
     def __init__(self):
         self.api_key = Config.GEMINI_API_KEY
-        # Lista de modelos por prioridade para fallback automático
+        # Modelos disponíveis em ordem de preferência
         self.models = [
             "gemini-3.5-flash",
             "gemini-3-flash-preview",
             "gemini-3.1-flash-lite-preview",
-            "gemini-3.8-flash",
-            "gemini-2.5-flash"
+            "gemini-3.8-flash"
         ]
 
-    def _call_api(self, payload: dict) -> dict | None:
-        """Executa a requisição REST para a API do Gemini com fallback entre modelos"""
-        if not self.api_key or self.api_key.strip() in ("", "sua_chave_gemini_aqui"):
-            logger.error("GEMINI_API_KEY não configurada no .env")
-            return None
+    def _optimize_image(self, image_bytes: bytes, max_dim: int = 1536) -> tuple[bytes, str]:
+        """Redimensiona e otimiza a imagem para evitar timeouts de rede e reduzir latência"""
+        try:
+            img = Image.open(io.BytesIO(image_bytes))
+            if img.mode != "RGB":
+                img = img.convert("RGB")
+            
+            # Redimensiona mantendo a proporção se ultrapassar max_dim
+            if max(img.size) > max_dim:
+                img.thumbnail((max_dim, max_dim), Image.Resampling.LANCZOS)
+            
+            output = io.BytesIO()
+            img.save(output, format="JPEG", quality=85, optimize=True)
+            return output.getvalue(), "image/jpeg"
+        except Exception as e:
+            logger.warning(f"Não foi possível otimizar a imagem via PIL: {e}. Usando original.")
+            return image_bytes, "image/jpeg"
 
+    def _call_api(self, payload: dict) -> tuple[dict | None, str]:
+        """Executa a requisição REST para a API do Gemini com fallback e retorno de diagnóstico detalhado"""
+        if not self.api_key or self.api_key.strip() in ("", "sua_chave_gemini_aqui"):
+            msg = "GEMINI_API_KEY não está configurada no .env"
+            logger.error(msg)
+            return None, msg
+
+        errors = []
         for model in self.models:
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={self.api_key}"
             try:
                 logger.info(f"Tentando extração com Gemini modelo: {model}")
-                response = requests.post(url, json=payload, timeout=25)
+                response = requests.post(url, json=payload, timeout=30)
                 
                 if response.status_code == 200:
                     data = response.json()
@@ -82,74 +104,112 @@ class GeminiService:
                         parts = candidates[0]["content"].get("parts", [])
                         if parts and "text" in parts[0]:
                             text_response = parts[0]["text"].strip()
-                            return self._parse_json_response(text_response)
-                elif response.status_code == 400:
-                    logger.error(f"Erro 400 da API Gemini (Chave inválida ou payload incorreto): {response.text}")
-                    # Erro de autenticação não adianta tentar outro modelo
-                    break
+                            parsed = self._parse_json_response(text_response)
+                            if parsed:
+                                return parsed, ""
+                            else:
+                                err = f"Modelo {model} respondeu, mas falhou ao decodificar JSON: {text_response[:200]}"
+                                errors.append(err)
+                                continue
                 else:
-                    logger.warning(f"Modelo {model} retornou status {response.status_code}. Tentando próximo...")
+                    err = f"Modelo {model} retornou status {response.status_code}: {response.text[:200]}"
+                    logger.warning(err)
+                    errors.append(err)
             except requests.RequestException as e:
-                logger.warning(f"Timeout ou erro de conexão no modelo {model}: {e}. Tentando próximo...")
+                err = f"Timeout ou falha de rede no modelo {model}: {e}"
+                logger.warning(err)
+                errors.append(err)
 
-        logger.error("Todos os modelos Gemini falharam na requisição.")
-        return None
+        full_error = " | ".join(errors) if errors else "Nenhum modelo respondeu com sucesso."
+        logger.error(f"Todos os modelos Gemini falharam: {full_error}")
+        return None, full_error
 
     def _parse_json_response(self, text: str) -> dict | None:
-        """Limpa blocos de código markdown e converte a resposta para dicionário Python"""
-        try:
-            cleaned = text.strip()
-            if cleaned.startswith("```"):
-                lines = cleaned.splitlines()
-                if lines[0].startswith("```"):
-                    lines = lines[1:]
-                if lines and lines[-1].startswith("```"):
-                    lines = lines[:-1]
-                cleaned = "\n".join(lines).strip()
-            
-            parsed = json.loads(cleaned)
-            if isinstance(parsed, dict) and "tipo" in parsed:
-                return parsed
-            logger.error(f"Resposta JSON do Gemini não continha campo 'tipo': {parsed}")
-            return None
-        except Exception as e:
-            logger.error(f"Falha ao decodificar JSON retornado pelo Gemini: {e}\nTexto bruto: {text}")
+        """Limpa e decodifica a resposta JSON tolerando texto ao redor ou blocos markdown"""
+        if not text:
             return None
 
-    def extract_from_image(self, image_bytes: bytes, mime_type: str = "image/jpeg") -> dict | None:
-        """Analisa uma imagem (print de passagem/promo) e retorna dados estruturados"""
-        b64_image = base64.b64encode(image_bytes).decode("utf-8")
+        # 1. Tentar direto
+        try:
+            parsed = json.loads(text.strip())
+            return self._validate_and_normalize(parsed)
+        except Exception:
+            pass
+
+        # 2. Procurar bloco markdown ```json ... ``` ou ``` ... ```
+        match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", text)
+        if match:
+            try:
+                parsed = json.loads(match.group(1).strip())
+                return self._validate_and_normalize(parsed)
+            except Exception:
+                pass
+
+        # 3. Procurar a primeira ocorrência de { e a última de }
+        start = text.find("{")
+        end = text.rfind("}")
+        if start != -1 and end != -1 and end > start:
+            try:
+                parsed = json.loads(text[start:end+1])
+                return self._validate_and_normalize(parsed)
+            except Exception:
+                pass
+
+        return None
+
+    def _validate_and_normalize(self, data: dict) -> dict | None:
+        """Normaliza campos e garante que haja um campo 'tipo' válido"""
+        if not isinstance(data, dict):
+            return None
+
+        # Infere o tipo se não estiver presente
+        if "tipo" not in data:
+            if "bonus_maximo" in data or "origem_programa" in data:
+                data["tipo"] = "promo"
+            elif "origem_iata" in data or "destino_iata" in data or "classe" in data:
+                data["tipo"] = "trecho"
+            else:
+                data["tipo"] = "trecho"
+
+        return data
+
+    def extract_from_image(self, image_bytes: bytes, mime_type: str = "image/jpeg") -> tuple[dict | None, str]:
+        """Analisa uma imagem (print de passagem/promo) com compressão prévia e resposta estruturada"""
+        opt_bytes, opt_mime = self._optimize_image(image_bytes)
+        b64_image = base64.b64encode(opt_bytes).decode("utf-8")
+        
         payload = {
             "contents": [{
                 "parts": [
-                    {"text": EXTRACTION_SYSTEM_PROMPT + "\n\nAnalise esta imagem:"},
+                    {"text": EXTRACTION_SYSTEM_PROMPT + "\n\nAnalise detalhadamente a imagem anexa e retorne o JSON estruturado:"},
                     {
                         "inlineData": {
-                            "mimeType": mime_type,
+                            "mimeType": opt_mime,
                             "data": b64_image
                         }
                     }
                 ]
             }],
             "generationConfig": {
-                "temperature": 0.2
+                "temperature": 0.2,
+                "responseMimeType": "application/json"
             }
         }
         return self._call_api(payload)
 
-    def extract_from_text(self, text_content: str) -> dict | None:
-        """Analisa um texto bruto (mensagem de texto sobre promoção/trecho) e retorna dados estruturados"""
+    def extract_from_text(self, text_content: str) -> tuple[dict | None, str]:
+        """Analisa um texto bruto de promoção ou trecho e retorna dados estruturados"""
         payload = {
             "contents": [{
                 "parts": [
-                    {"text": EXTRACTION_SYSTEM_PROMPT + f"\n\nAnalise o seguinte texto:\n{text_content}"}
+                    {"text": EXTRACTION_SYSTEM_PROMPT + f"\n\nAnalise o seguinte texto e retorne o JSON estruturado:\n{text_content}"}
                 ]
             }],
             "generationConfig": {
-                "temperature": 0.2
+                "temperature": 0.2,
+                "responseMimeType": "application/json"
             }
         }
         return self._call_api(payload)
 
 gemini_service = GeminiService()
-

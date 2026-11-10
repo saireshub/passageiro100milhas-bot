@@ -49,4 +49,5 @@
 | `ExpressAzureMonitorLogDestNotSupported` no Container Apps | Região Mexico Central no modo Express rejeita logs corporativos | Criar o ambiente de contêineres com `--logs-destination none`. |
 | `TasksOperationsNotAllowed` no ACR | Azure for Students bloqueia `az acr build` na nuvem | Utilizar **GitHub Actions** gratuito para compilar a imagem e fazer push ao ACR. |
 | Erro OCR / Extração de imagem | `ocr_extractor` antigo hardcoded para DeepSeek inexistente | Migração para `services/gemini_service.py` com Google Gemini multimodal (imagem e texto). |
+| Timeout / Falha JSON na imagem Gemini | Imagens pesadas (>5MB) de smartphones e respostas com markdown | Adicionada compressão Pillow (max 1536px), `responseMimeType: application/json` e parser regex flexível. |
 | Injeção acidental em templates | Dados com caracteres especiais digitados no Telegram | Ativar `autoescape=True` no Jinja2 e sanitizar campos de texto. |

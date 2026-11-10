@@ -18,6 +18,9 @@ from services.storage_service import storage_service
 
 logger = logging.getLogger(__name__)
 
+# Versão do deploy para rastreio no chat
+BOT_VERSION = "2026.11.10-gemini-v2"
+
 # Armazenamento em memória dos posts pendentes de aprovação
 PENDING_POSTS = {}
 
@@ -29,7 +32,6 @@ def is_user_authorized(user_id: int | None) -> bool:
     if not authorized or str(authorized).strip() in ("", "seu_telegram_user_id_aqui"):
         logger.warning(f"Acesso negado: TELEGRAM_USER_ID não foi definido no .env (Tentativa do usuário ID: {user_id})")
         return False
-    # Permite múltiplos IDs separados por vírgula se houver mais de um administrador
     authorized_ids = [uid.strip() for uid in str(authorized).split(",") if uid.strip()]
     return str(user_id) in authorized_ids
 
@@ -94,15 +96,38 @@ def format_promo_caption(data: dict) -> str:
 @admin_only
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     welcome_text = (
-        "✈️ *Painel Passageiro 100 Milhas*\n\n"
+        f"✈️ *Painel Passageiro 100 Milhas* (`{BOT_VERSION}`)\n\n"
         "Envie uma imagem ou um texto para criar o post automaticamente com o Google Gemini:\n\n"
         "📸 *Envie um Print:* Foto da passagem ou banner da promoção.\n"
         "✍️ *Envie um Texto:* Cole o texto da promoção ou os dados do voo.\n\n"
-        "*Comandos manuais de demonstração:*\n"
+        "*Comandos disponíveis:*\n"
+        "🔹 `/status` - Diagnóstico do sistema e variáveis de ambiente\n"
         "🔹 `/trecho` - Gerar Alerta de Trecho (Exemplo)\n"
         "🔹 `/promo` - Gerar Informativo de Promoção (Exemplo)\n"
     )
     await update.message.reply_text(welcome_text, parse_mode="Markdown")
+
+@admin_only
+async def status_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Exibe o status do contêiner e a verificação das integrações"""
+    gemini_key = Config.GEMINI_API_KEY
+    gemini_status = f"✅ Ativa (`{gemini_key[:8]}...`)" if gemini_key and len(gemini_key) > 10 else "❌ Não configurada"
+    
+    blob_conn = Config.AZURE_STORAGE_CONNECTION_STRING
+    blob_status = f"✅ Configurada (Container: `{Config.AZURE_STORAGE_CONTAINER_NAME}`)" if blob_conn else "❌ Não configurada"
+    
+    meta_token = Config.META_ACCESS_TOKEN
+    meta_status = f"✅ Ativo (`{meta_token[:8]}...`)" if meta_token else "⚠️ Simulação"
+
+    status_msg = (
+        f"📊 *STATUS DO SISTEMA* (`{BOT_VERSION}`)\n\n"
+        f"🤖 *Google Gemini:* {gemini_status}\n"
+        f"☁️ *Azure Blob Storage:* {blob_status}\n"
+        f"📸 *Meta Graph API:* {meta_status}\n"
+        f"👤 *Admin Telegram ID:* `{Config.TELEGRAM_USER_ID}`\n"
+        f"📁 *Saída de Imagens:* `{Config.OUTPUT_DIR}`"
+    )
+    await update.message.reply_text(status_msg, parse_mode="Markdown")
 
 @admin_only
 async def trecho_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -143,36 +168,40 @@ async def promo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def _render_and_send_preview(update: Update, data: dict, tipo: str):
     """Renderiza a imagem correspondente e envia para prévia com botões inline"""
-    if tipo == "promo":
-        image_path = await renderer.render_promo(data)
-        caption = format_promo_caption(data)
-    else:
-        image_path = await renderer.render_trecho(data)
-        caption = format_trecho_caption(data)
+    try:
+        if tipo == "promo":
+            image_path = await renderer.render_promo(data)
+            caption = format_promo_caption(data)
+        else:
+            image_path = await renderer.render_trecho(data)
+            caption = format_trecho_caption(data)
 
-    post_id = f"post_{os.path.basename(image_path)}"
-    PENDING_POSTS[post_id] = {
-        "image_path": image_path,
-        "caption": caption,
-        "data": data,
-        "tipo": tipo
-    }
+        post_id = f"post_{os.path.basename(image_path)}"
+        PENDING_POSTS[post_id] = {
+            "image_path": image_path,
+            "caption": caption,
+            "data": data,
+            "tipo": tipo
+        }
 
-    keyboard = [
-        [
-            InlineKeyboardButton("🚀 Confirmar e Publicar", callback_data=f"pub_{post_id}"),
-            InlineKeyboardButton("❌ Cancelar", callback_data=f"can_{post_id}")
+        keyboard = [
+            [
+                InlineKeyboardButton("🚀 Confirmar e Publicar", callback_data=f"pub_{post_id}"),
+                InlineKeyboardButton("❌ Cancelar", callback_data=f"can_{post_id}")
+            ]
         ]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
+        reply_markup = InlineKeyboardMarkup(keyboard)
 
-    with open(image_path, 'rb') as photo:
-        await update.message.reply_photo(
-            photo=photo,
-            caption=f"👁️ *PRÉVIA DO POST GERADO ({tipo.upper()})*\n\n{caption}",
-            parse_mode="Markdown",
-            reply_markup=reply_markup
-        )
+        with open(image_path, 'rb') as photo:
+            await update.message.reply_photo(
+                photo=photo,
+                caption=f"👁️ *PRÉVIA DO POST GERADO ({tipo.upper()})*\n\n{caption}",
+                parse_mode="Markdown",
+                reply_markup=reply_markup
+            )
+    except Exception as e:
+        logger.error(f"Erro ao renderizar arte: {e}", exc_info=True)
+        await update.message.reply_text(f"❌ *Erro ao renderizar imagem:* `{e}`", parse_mode="Markdown")
 
 @admin_only
 async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -193,7 +222,6 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_caption(caption="⏳ Fazendo upload da imagem para o Azure Blob Storage...")
         
         try:
-            # 1. Faz upload da imagem para o Azure Blob Storage gerando a URL com SAS
             image_url = storage_service.upload_image(post_info["image_path"])
         except Exception as e:
             logger.error(f"Erro no upload da imagem para a nuvem: {e}")
@@ -202,7 +230,6 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await query.edit_message_caption(caption="⏳ Imagem na nuvem. Publicando no Instagram via Meta Graph API...")
         
-        # 2. Chama a Meta Graph API passando a URL pública
         res = meta_api.publish_photo(image_url, post_info["caption"])
         
         if res.get("status") in ["success", "simulated"]:
@@ -222,23 +249,28 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 @admin_only
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Processa fotos enviadas para o bot extraindo dados via Google Gemini Vision"""
-    await update.message.reply_text("🔍 Recebi sua imagem. Analisando com o Google Gemini Vision...")
+    await update.message.reply_text("🔍 Recebi sua imagem. Otimizando e analisando com o Google Gemini Vision...")
     
-    photo_file = await update.message.photo[-1].get_file()
-    image_bytes = await photo_file.download_as_bytearray()
-    
-    data = gemini_service.extract_from_image(bytes(image_bytes))
-    
-    if data and isinstance(data, dict):
-        tipo = data.get("tipo", "trecho")
-        await update.message.reply_text(f"✨ Dados extraídos com sucesso ({tipo.upper()})! Gerando o design do post...")
-        await _render_and_send_preview(update, data, tipo)
-    else:
-        await update.message.reply_text(
-            "⚠️ *Não foi possível extrair dados da imagem com o Gemini.*\n\n"
-            "Verifique se a sua chave `GEMINI_API_KEY` no arquivo `.env` é válida (obtida em https://aistudio.google.com/app/apikey).",
-            parse_mode="Markdown"
-        )
+    try:
+        photo_file = await update.message.photo[-1].get_file()
+        image_bytes = await photo_file.download_as_bytearray()
+        
+        data, err_msg = gemini_service.extract_from_image(bytes(image_bytes))
+        
+        if data and isinstance(data, dict):
+            tipo = data.get("tipo", "trecho")
+            await update.message.reply_text(f"✨ Dados extraídos com sucesso ({tipo.upper()})! Gerando o design do post...")
+            await _render_and_send_preview(update, data, tipo)
+        else:
+            await update.message.reply_text(
+                f"⚠️ *Não foi possível extrair dados da imagem com o Gemini.*\n\n"
+                f"*Detalhes do erro:* `{err_msg}`\n\n"
+                "Verifique o `/status` para checar as credenciais.",
+                parse_mode="Markdown"
+            )
+    except Exception as e:
+        logger.error(f"Erro em handle_photo: {e}", exc_info=True)
+        await update.message.reply_text(f"❌ *Falha no processamento da imagem:* `{e}`", parse_mode="Markdown")
 
 @admin_only
 async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -249,18 +281,22 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text("🤖 Analisando o texto da promoção com o Google Gemini...")
     
-    data = gemini_service.extract_from_text(user_text)
-    
-    if data and isinstance(data, dict):
-        tipo = data.get("tipo", "promo")
-        await update.message.reply_text(f"✨ Promoção identificada ({tipo.upper()})! Gerando o design do post...")
-        await _render_and_send_preview(update, data, tipo)
-    else:
-        await update.message.reply_text(
-            "⚠️ *Não foi possível interpretar os dados do texto com o Gemini.*\n\n"
-            "Verifique se o texto contém dados de emissão/promoção ou se a sua chave `GEMINI_API_KEY` no `.env` é válida.",
-            parse_mode="Markdown"
-        )
+    try:
+        data, err_msg = gemini_service.extract_from_text(user_text)
+        
+        if data and isinstance(data, dict):
+            tipo = data.get("tipo", "promo")
+            await update.message.reply_text(f"✨ Promoção identificada ({tipo.upper()})! Gerando o design do post...")
+            await _render_and_send_preview(update, data, tipo)
+        else:
+            await update.message.reply_text(
+                f"⚠️ *Não foi possível interpretar o texto.*\n\n"
+                f"*Detalhes do erro:* `{err_msg}`",
+                parse_mode="Markdown"
+            )
+    except Exception as e:
+        logger.error(f"Erro em handle_text: {e}", exc_info=True)
+        await update.message.reply_text(f"❌ *Falha no processamento do texto:* `{e}`", parse_mode="Markdown")
 
 def setup_telegram_bot() -> Application:
     """Inicializa o bot do Telegram com todos os handlers e verificações"""
@@ -272,6 +308,7 @@ def setup_telegram_bot() -> Application:
     app = Application.builder().token(token).build()
     
     app.add_handler(CommandHandler("start", start_command))
+    app.add_handler(CommandHandler("status", status_command))
     app.add_handler(CommandHandler("trecho", trecho_command))
     app.add_handler(CommandHandler("promo", promo_command))
     app.add_handler(CallbackQueryHandler(callback_handler))

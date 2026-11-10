@@ -44,3 +44,4 @@
 - [x] Remoção do script legado `bot-deepseek-imagem.py` e descontinuação do DeepSeek em favor do Google Gemini.
 - [x] Criação do serviço `services/gemini_service.py` com extração multimodal (suporte para prints de voos e textos de promoções).
 - [x] Integração de handlers no `services/telegram_bot.py` para fotos e mensagens de texto com prévia e aprovação inline.
+- [x] Otimização e compressão de imagens via Pillow, retorno forçado em JSON puro (`responseMimeType`) e comando `/status`.
