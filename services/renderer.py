@@ -79,7 +79,7 @@ class HeadlessRenderer:
         return output_path
 
     async def _capture_screenshot(self, html_content: str, output_path: str):
-        """Salva um HTML temporário e executa a captura headless via Chromium CLI"""
+        """Salva um HTML temporário e executa a captura headless via Chromium CLI no Linux e Windows"""
         with tempfile.NamedTemporaryFile("w", delete=False, suffix=".html", encoding="utf-8") as temp_file:
             temp_file.write(html_content)
             temp_html_path = temp_file.name
@@ -87,13 +87,17 @@ class HeadlessRenderer:
         try:
             temp_html_url = f"file:///{temp_html_path.replace(os.sep, '/')}"
             
+            # Flags essenciais para containers Docker Linux headless sem servidor gráfico X11
             cmd = [
                 self.chromium_binary,
+                "--headless=new",
+                "--no-sandbox",
+                "--disable-dev-shm-usage",
+                "--disable-gpu",
+                "--disable-software-rasterizer",
+                "--hide-scrollbars",
                 f"--screenshot={output_path}",
                 "--window-size=1080,1350",
-                "--hide-scrollbars",
-                "--disable-gpu",
-                "--no-sandbox",
                 "--virtual-time-budget=2000",
                 "--run-all-compositor-stages-before-draw",
                 temp_html_url
@@ -107,8 +111,33 @@ class HeadlessRenderer:
             stdout, stderr = await process.communicate()
 
             if process.returncode != 0:
-                logger.error(f"Erro ao capturar screenshot via Chromium CLI: {stderr.decode()}")
-                raise RuntimeError("Falha na geração da imagem via Chromium CLI")
+                err_text = stderr.decode("utf-8", errors="replace").strip()
+                logger.warning(f"Tentativa 1 com --headless=new falhou (código {process.returncode}): {err_text}. Tentando fallback clássico...")
+                
+                # Fallback para Chromium mais antigo usando --headless padrão
+                cmd_fallback = [
+                    self.chromium_binary,
+                    "--headless",
+                    "--no-sandbox",
+                    "--disable-dev-shm-usage",
+                    "--disable-gpu",
+                    "--hide-scrollbars",
+                    f"--screenshot={output_path}",
+                    "--window-size=1080,1350",
+                    "--virtual-time-budget=2000",
+                    temp_html_url
+                ]
+                process2 = await asyncio.create_subprocess_exec(
+                    *cmd_fallback,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE
+                )
+                stdout2, stderr2 = await process2.communicate()
+                
+                if process2.returncode != 0:
+                    err_text2 = stderr2.decode("utf-8", errors="replace").strip()
+                    logger.error(f"Falha também no fallback Chromium CLI (código {process2.returncode}): {err_text2}")
+                    raise RuntimeError(f"Falha ao gerar imagem via Chromium CLI: {err_text2 or err_text}")
 
             logger.info(f"Imagem gerada com sucesso em: {output_path}")
 
