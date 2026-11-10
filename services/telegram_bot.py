@@ -209,6 +209,15 @@ async def _render_and_send_preview(update: Update, data: dict, tipo: str):
         logger.error(f"Erro ao renderizar arte: {e}", exc_info=True)
         await update.message.reply_text(f"❌ *Erro ao renderizar imagem:* `{e}`", parse_mode="Markdown")
 
+def _cleanup_temp_image(image_path: str | None):
+    """Remove o arquivo temporário do disco após publicação ou cancelamento"""
+    if image_path and os.path.exists(image_path):
+        try:
+            os.remove(image_path)
+            logger.debug(f"Arquivo temporário removido: {image_path}")
+        except Exception as e:
+            logger.warning(f"Não foi possível remover arquivo temporário {image_path}: {e}")
+
 @admin_only
 async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Trata os cliques nos botões inline de aprovação ou cancelamento"""
@@ -261,10 +270,12 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             await query.edit_message_caption(caption=f"❌ *Erro ao publicar na Meta:* `{res.get('error')}`", parse_mode="Markdown")
             
+        _cleanup_temp_image(post_info.get("image_path"))
         del PENDING_POSTS[post_id]
 
     elif action == "can_":
         await query.edit_message_caption(caption="❌ Publicação cancelada pelo administrador.")
+        _cleanup_temp_image(post_info.get("image_path"))
         del PENDING_POSTS[post_id]
 
 @admin_only

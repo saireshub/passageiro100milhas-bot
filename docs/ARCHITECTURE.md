@@ -81,7 +81,7 @@ passageiro100milhas-bot/
 ├── .agents/                      # Configurações do ambiente de agentes e regras
 ├── .github/
 │   └── workflows/
-│       └── deploy.yml            # Pipeline CI/CD no GitHub Actions (Build & Push ACR)
+│       └── deploy.yml            # Pipeline CI/CD no GitHub Actions (Build, Push & Deploy OIDC)
 ├── docs/                         # Documentação oficial do projeto
 │   ├── PRD.md
 │   ├── ARCHITECTURE.md
@@ -92,24 +92,25 @@ passageiro100milhas-bot/
 │   ├── TASKS.md
 │   ├── MEMORY.md
 │   └── AGENTS.md
-├── output/                       # Mídias temporárias geradas (.png)
+├── output/                       # Mídias temporárias geradas (.png removidas após postagem)
 ├── services/                     # Módulos desacoplados de serviços
-│   ├── telegram_bot.py           # Handlers e fluxos com trava @admin_only
-│   ├── renderer.py               # Renderizador Chromium CLI + Jinja2
+│   ├── telegram_bot.py           # Handlers e fluxos com trava @admin_only e limpeza de temp
+│   ├── gemini_service.py         # Extração multimodal (Vision & Text) via Google Gemini
+│   ├── renderer.py               # Renderizador Chromium CLI + Jinja2 (autoescape=True)
 │   ├── storage_service.py        # Integração Azure Blob Storage com SAS 24h
-│   ├── meta_api.py               # Cliente HTTP assíncrono Meta Graph API
-│   └── ocr_extractor.py          # Extração de texto/dados via IA e visão
+│   └── meta_api.py               # Cliente Meta Graph API (Crossposting Instagram & Facebook)
 ├── templates/                    # Templates visuais dos posts (HTML/CSS)
 │   ├── trecho_template.html      # Template para Alerta de Trecho (Milhas)
-│   └── promo_template.html       # Template para Informativo de Promoção
+│   ├── promo_template.html       # Template para Informativo de Promoção
+│   └── assets/                   # Logotipos SVG da marca
 ├── .dockerignore                 # Exclusão de arquivos do contexto de build
 ├── .env.example                  # Modelo de variáveis de ambiente
 ├── config.py                     # Leitura e validação das variáveis do .env
-├── Dockerfile                    # Receita multi-stage (Python + Chromium)
+├── Dockerfile                    # Receita multi-stage (Python 3.12 + Chromium não-root)
 ├── compose.yaml                  # Orquestração local do serviço do bot
 ├── main.py                       # Ponto de entrada do sistema
 ├── README.md                     # Apresentação do repositório
-└── requirements.txt              # Dependências do projeto (com azure-storage-blob)
+└── requirements.txt              # Dependências enxutas (Telegram, Pillow, Jinja2, Azure Blob)
 ```
 
 ---
@@ -125,6 +126,7 @@ Todos os recursos do projeto estão centralizados em um único grupo de recursos
 | **Aplicativo de Contêiner** | `app-passageiro100milhas` | Container App | 0.5 vCPU, 1.0 GiB RAM, Ingress desabilitado |
 | **Registro de Imagens** | `crpassageiro100milhas` | Container Registry (ACR) | SKU Basic, Admin Enabled |
 | **Armazenamento de Blobs**| `stpassageiro100milhas` | Storage Account | LRS Hot, Container: `passageiro100milhasbot` |
+| **Identidade Federada CI/CD**| `id-github-passageiro100milhas` | User-Assigned Managed Identity | Role Contributor no RG, OIDC com GitHub Actions |
 
 ---
 

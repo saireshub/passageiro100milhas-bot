@@ -15,8 +15,8 @@ Este documento define as personas especializadas, limites de escopo (*guardrails
 - **Restrição:** Não deve implementar alterações cosméticas de CSS ou templates sem alinhar com o Designer de Templates.
 
 ### 2.2 🐍 Engenheiro Backend & Bot (`Telegram & APIs`)
-- **Responsabilidade:** Desenvolvimento dos fluxos de conversação do Telegram, handlers, validação de regras de negócio, extração OCR e comunicação com a Meta Graph API.
-- **Escopo Autorizado:** `main.py`, `services/telegram_bot.py`, `services/meta_api.py`, `services/ocr_extractor.py`, `requirements.txt`.
+- **Responsabilidade:** Desenvolvimento dos fluxos de conversação do Telegram, handlers, validação de regras de negócio, extração multimodal com Google Gemini e comunicação com a Meta Graph API / Azure Blob.
+- **Escopo Autorizado:** `main.py`, `services/telegram_bot.py`, `services/gemini_service.py`, `services/storage_service.py`, `services/meta_api.py`, `requirements.txt`.
 - **Restrição:** Respeitar o padrão assíncrono (`async/await`) e nunca cometer credenciais no código.
 
 ### 2.3 🎨 Designer de Templates & Frontend (`HTML/CSS/Visual`)
@@ -25,9 +25,9 @@ Este documento define as personas especializadas, limites de escopo (*guardrails
 - **Restrição:** Não alterar a lógica de publicação na Meta ou os fluxos de diálogo do Telegram.
 
 ### 2.4 🚢 Especialista em DevOps & Infraestrutura
-- **Responsabilidade:** Manutenção do ambiente Docker, otimização de imagem, scripts de deploy na VM Azure e controle de recursos (RAM e swap).
-- **Escopo Autorizado:** `Dockerfile`, `compose.yaml`, `.dockerignore`, documentação de infraestrutura em `docs/ARCHITECTURE.md`.
-- **Restrição:** Manter o consumo compatível com a VM B1s (1 vCPU, 1 GB RAM).
+- **Responsabilidade:** Manutenção do ambiente Docker, otimização de imagem, esteira CI/CD com GitHub Actions / OIDC e gestão do Azure Container Apps.
+- **Escopo Autorizado:** `Dockerfile`, `compose.yaml`, `.dockerignore`, `.github/workflows/`, documentação de infraestrutura em `docs/ARCHITECTURE.md`.
+- **Restrição:** Manter o consumo compatível com o perfil Serverless (0.5 vCPU, 1.0 GiB RAM).
 
 ---
 

@@ -5,7 +5,7 @@
 ## 1. Padrões de Código e Guia de Estilo (Python)
 
 ### 1.1 Convenções de Nomenclatura
-- **Arquivos e Módulos:** `snake_case` (ex: `telegram_bot.py`, `ocr_extractor.py`).
+- **Arquivos e Módulos:** `snake_case` (ex: `telegram_bot.py`, `gemini_service.py`).
 - **Funções e Variáveis:** `snake_case` (ex: `render_post_image()`, `creation_id`).
 - **Classes e Modelos:** `PascalCase` (ex: `PostTrechoData`, `MetaApiClient`).
 - **Constantes e Configurações:** `UPPER_SNAKE_CASE` (ex: `TELEGRAM_BOT_TOKEN`, `DEFAULT_VIEWPORT`).

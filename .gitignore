@@ -14,7 +14,8 @@ __pycache__/
 .pytest_cache/
 
 # Mídias temporárias geradas
-output/post_*.png
+output/*
+!output/.gitkeep
 scratch/
 
 # IDE e sistema

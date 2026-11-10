@@ -30,9 +30,11 @@ def is_authorized(user_id: int) -> bool:
 | :--- | :--- | :--- |
 | `TELEGRAM_BOT_TOKEN` | Token de controle total do bot Telegram | Crítico |
 | `TELEGRAM_USER_ID` | Identificador do administrador autorizado | Alto |
-| `META_ACCESS_TOKEN` | Token permanente de publicação no Instagram | Crítico |
-| `INSTAGRAM_ACCOUNT_ID` | Identificador da conta profissional da Meta | Médio |
-| `GEMINI_API_KEY` | Chave de acesso à API de IA/OCR | Alto |
+| `META_ACCESS_TOKEN` | Token permanente de publicação na Meta (Instagram & Facebook) | Crítico |
+| `INSTAGRAM_ACCOUNT_ID` | Identificador da conta profissional do Instagram | Médio |
+| `FB_PAGE_ID` | Identificador da Página do Facebook vinculada | Médio |
+| `GEMINI_API_KEY` | Chave de acesso à API do Google Gemini (Vision & Text) | Alto |
+| `AZURE_STORAGE_CONNECTION_STRING` | String de conexão com o Azure Blob Storage | Crítico |
 
 ---
 
@@ -48,14 +50,17 @@ def is_authorized(user_id: int) -> bool:
 
 ---
 
-## 4. Segurança de Infraestrutura e Redes
+## 4. Segurança de Infraestrutura, CI/CD e Contêineres
 
-### 4.1 Máquina Virtual Azure
-- **Grupo de Segurança de Rede (NSG):** Apenas as portas estritamente necessárias devem estar abertas:
-  - Porta 22 (SSH) com acesso restrito preferencialmente via chave pública SSH.
-  - Portas internas de contêineres não devem ser expostas publicamente sem proxy reverso seguro.
-- **Isolamento de Contêiner:** O processo do bot roda dentro do contêiner Docker sem permissões de `root` sempre que possível.
+### 4.1 Azure Container Apps & Isolamento
+- **Ingress Desabilitado (Zero Superfície HTTP Exposta):** O aplicativo `app-passageiro100milhas` opera em modo *polling* privado com o Telegram, não expondo nenhuma porta HTTP/SSH pública na internet.
+- **Execução Não-Root:** O contêiner Docker roda estritamente sob o usuário `appuser` (UID `1001`) com ambiente de perfil isolado em `/home/appuser` e `/tmp/chromium-data`.
+- **Links Efêmeros (SAS Token 24h):** O container do Azure Blob Storage permanece privado. As imagens publicadas recebem apenas URLs temporárias assinadas com permissão exclusiva de leitura válidas por 24 horas para download da Meta API.
 
-### 4.2 Políticas e Boas Práticas com a Meta Graph API
+### 4.2 Autenticação Sem Senhas no CI/CD (OIDC Federation)
+- O deploy contínuo no GitHub Actions (`.github/workflows/deploy.yml`) não armazena credenciais estáticas de administração da Azure (`clientSecret`).
+- O workflow utiliza **OpenID Connect (OIDC)** assumindo a Identidade Gerenciada `id-github-passageiro100milhas` via token JWT de curta duração, com permissão restrita exclusivamente ao escopo do grupo de recursos `rg-passageiro100milhas-mx`.
+
+### 4.3 Políticas e Boas Práticas com a Meta Graph API
 - **Respeito a Rate Limits:** A API da Meta possui cotas de publicação por hora/dia. O bot implementa validações para não disparar requisições em loops rápidos acidentais.
-- **Validação de Container State:** Sempre checar o status de preparação do container (`status_code == 'FINISHED'`) antes de chamar `media_publish` para evitar erros `2207001` (Media container not ready).
+- **Validação de Container State:** Sempre checar o status de preparação do container (`status_code == 'FINISHED'`) antes de chamar `media_publish` no Instagram para evitar erros `2207001` (Media container not ready).

@@ -3,8 +3,8 @@
 ---
 
 ## 📌 Status Atual do Projeto
-- **Fase Atual:** Deploy em Produção Concluído e Validação Operacional.
-- **Ambiente:** Em execução na nuvem via **Azure Container Apps** na região Mexico Central com CI/CD automatizado no GitHub Actions.
+- **Fase Atual:** Produção Estável com CI/CD 100% Autônomo (OIDC + Python 3.12).
+- **Ambiente:** Em execução contínua na nuvem via **Azure Container Apps** (Mexico Central), realizando extração multimodal com Google Gemini, renderização headless em Chromium e crossposting simultâneo no Instagram e Facebook.
 
 ---
 
@@ -30,8 +30,8 @@
 
 - [x] Definição de arquitetura e modelo operacional do MVP (Telegram CMS com Human-in-the-Loop).
 - [x] Criação e configuração do bot Telegram via `@BotFather` e obtenção do `TELEGRAM_BOT_TOKEN`.
-- [x] Estruturação modular (`services/telegram_bot.py`, `services/renderer.py`, `services/storage_service.py`, `services/meta_api.py`, `config.py`).
-- [x] Criação e padronização do `Dockerfile` multi-stage com Python 3.11 e Chromium CLI.
+- [x] Estruturação modular (`services/telegram_bot.py`, `services/gemini_service.py`, `services/renderer.py`, `services/storage_service.py`, `services/meta_api.py`, `config.py`).
+- [x] Criação e padronização do `Dockerfile` multi-stage com Python 3.12 e Chromium CLI.
 - [x] Implementação da trava de segurança por `TELEGRAM_USER_ID` com decorator `@admin_only`.
 - [x] Criação do serviço `services/storage_service.py` com integração ao Azure Blob Storage e geração de SAS URLs de 24h para a Meta Graph API.
 - [x] Refinamento da verificação de status do Media Container na Meta Graph API com polling ativo (`status_code == 'FINISHED'`).
@@ -49,4 +49,7 @@
 - [x] Correção do Chromium no Docker com `--user-data-dir` temporário em `/tmp` e `HOME=/home/appuser`.
 - [x] Automação oficial de tags Docker via `docker/metadata-action` com SHA do Git e cache BuildKit (`type=gha`).
 - [x] Atualização da imagem base do Dockerfile para Python 3.12 slim.
-- [x] Configuração de Continuous Deployment (CD) 100% autônomo com Azure Managed Identity e OIDC.
+- [x] Configuração de Continuous Deployment (CD) 100% autônomo com Azure Managed Identity e OIDC (`id-github-passageiro100milhas`).
+- [x] Revisão geral, limpeza de arquivos e dependências não utilizadas (`playwright`, `fastapi`, `uvicorn`, `ocr_extractor.py`, `output/test_headless.png`).
+- [x] Hardening e higiene: ativação de `autoescape=True` no Jinja2 e limpeza automática de arquivos `.png` temporários após postagem/cancelamento.
+- [x] Sincronização completa da documentação oficial do projeto (`ARCHITECTURE.md`, `MEMORY.md`, `SECURITY.md`, `TASKS.md`).

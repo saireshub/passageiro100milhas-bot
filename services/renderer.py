@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 class HeadlessRenderer:
     def __init__(self):
-        self.env = Environment(loader=FileSystemLoader(Config.TEMPLATES_DIR))
+        self.env = Environment(loader=FileSystemLoader(Config.TEMPLATES_DIR), autoescape=True)
         self.chromium_binary = self._find_chromium_binary()
 
     def _find_chromium_binary(self) -> str:
