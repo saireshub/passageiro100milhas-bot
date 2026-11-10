@@ -51,4 +51,5 @@
 | Erro OCR / Extração de imagem | `ocr_extractor` antigo hardcoded para DeepSeek inexistente | Migração para `services/gemini_service.py` com Google Gemini multimodal (imagem e texto). |
 | Timeout / Falha JSON na imagem Gemini | Imagens pesadas (>5MB) de smartphones e respostas com markdown | Adicionada compressão Pillow (max 1536px), `responseMimeType: application/json` e parser regex flexível. |
 | Chromium CLI `Failed to create headless user data directory` | Usuário não-root no Docker sem pasta HOME ou `--user-data-dir` | Adicionado `--user-data-dir` dinâmico em `/tmp`, `HOME=/home/appuser` e permissão no Dockerfile. |
+| Meta API `Unsupported post request / Object ID does not exist` | Usou FB_PAGE_ID em vez de INSTAGRAM_ACCOUNT_ID no endpoint /media | Auto-resolução do Instagram Business Account ID (`17841467398304099`) via Graph API a partir do Page ID. |
 | Injeção acidental em templates | Dados com caracteres especiais digitados no Telegram | Ativar `autoescape=True` no Jinja2 e sanitizar campos de texto. |

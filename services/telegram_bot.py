@@ -19,7 +19,7 @@ from services.storage_service import storage_service
 logger = logging.getLogger(__name__)
 
 # Versão do deploy para rastreio no chat
-BOT_VERSION = "2026.11.10-gemini-v4"
+BOT_VERSION = "2026.11.10-gemini-v5"
 
 # Armazenamento em memória dos posts pendentes de aprovação
 PENDING_POSTS = {}
@@ -117,13 +117,19 @@ async def status_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     blob_status = f"✅ Configurada (Container: `{Config.AZURE_STORAGE_CONTAINER_NAME}`)" if blob_conn else "❌ Não configurada"
     
     meta_token = Config.META_ACCESS_TOKEN
-    meta_status = f"✅ Ativo (`{meta_token[:8]}...`)" if meta_token else "⚠️ Simulação"
+    ig_id = meta_api.get_instagram_business_account_id()
+    if ig_id:
+        meta_status = f"✅ Conectado (@passageiro100milhas - `{ig_id}`)"
+    elif meta_token:
+        meta_status = f"⚠️ Token ativo (`{meta_token[:8]}...`), mas Instagram não vinculado"
+    else:
+        meta_status = "⚠️ Simulação (Credenciais não configuradas)"
 
     status_msg = (
         f"📊 *STATUS DO SISTEMA* (`{BOT_VERSION}`)\n\n"
         f"🤖 *Google Gemini:* {gemini_status}\n"
         f"☁️ *Azure Blob Storage:* {blob_status}\n"
-        f"📸 *Meta Graph API:* {meta_status}\n"
+        f"📸 *Instagram Business:* {meta_status}\n"
         f"👤 *Admin Telegram ID:* `{Config.TELEGRAM_USER_ID}`\n"
         f"📁 *Saída de Imagens:* `{Config.OUTPUT_DIR}`"
     )
@@ -233,7 +239,8 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         res = meta_api.publish_photo(image_url, post_info["caption"])
         
         if res.get("status") in ["success", "simulated"]:
-            msg = f"✅ *POST PUBLICADO COM SUCESSO!*\nID: `{res.get('id')}`"
+            post_id = res.get('id')
+            msg = f"✅ *POST PUBLICADO NO INSTAGRAM COM SUCESSO!*\n\n📸 Perfil: *@passageiro100milhas*\n🆔 ID do Post: `{post_id}`"
             if res.get("status") == "simulated":
                 msg += "\n\n*(Modo Simulação: Configure credenciais reais da Meta no .env para publicar no Instagram real)*"
             await query.edit_message_caption(caption=msg, parse_mode="Markdown")

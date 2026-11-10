@@ -31,5 +31,5 @@ jobs:
           push: true
           tags: |
             crpassageiro100milhas.azurecr.io/passageiro100milhas-bot:latest
-            crpassageiro100milhas.azurecr.io/passageiro100milhas-bot:v4
+            crpassageiro100milhas.azurecr.io/passageiro100milhas-bot:v5
             crpassageiro100milhas.azurecr.io/passageiro100milhas-bot:${{ github.sha }}
