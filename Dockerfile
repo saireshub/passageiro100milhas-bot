@@ -3,7 +3,7 @@
 # ==============================================================================
 # 1. Build Stage: Compilação e isolamento do virtualenv Python
 # ==============================================================================
-FROM python:3.11-slim AS build
+FROM python:3.12-slim AS build
 WORKDIR /src
 
 # Cria ambiente virtual isolado
@@ -18,7 +18,7 @@ RUN --mount=type=bind,source=requirements.txt,target=requirements.txt \
 # ==============================================================================
 # 2. Runtime Stage: Imagem de produção enxuta, segura e não-root
 # ==============================================================================
-FROM python:3.11-slim AS runtime
+FROM python:3.12-slim AS runtime
 WORKDIR /app
 
 # Argumento de build para rastreabilidade de versão

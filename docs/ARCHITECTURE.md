@@ -60,7 +60,7 @@ sequenceDiagram
 
 | Componente | Tecnologia / Ferramenta | Justificativa |
 | :--- | :--- | :--- |
-| **Linguagem Principal** | Python 3.11+ | Facilidade assíncrona, robustez e ecossistema de APIs. |
+| **Linguagem Principal** | Python 3.12+ | Alta performance com CPython 3.12, tipagem moderna e ecossistema assíncrono. |
 | **Interface Administrativa** | `python-telegram-bot` (v21+) | Framework assíncrono moderno com suporte nativo a ConversationHandlers e InlineKeyboards. |
 | **Validação de Dados** | Pydantic v2 | Garantia estrita de tipos para os dados de entrada das emissões. |
 | **Motor de Templates** | Jinja2 | Injeção dinâmica de variáveis em templates HTML/CSS sem dependências externas. |
