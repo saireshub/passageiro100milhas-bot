@@ -152,3 +152,4 @@ class GeminiService:
         return self._call_api(payload)
 
 gemini_service = GeminiService()
+
