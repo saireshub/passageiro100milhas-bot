@@ -1,6 +1,7 @@
 import os
 import glob
 import time
+import shutil
 import asyncio
 import tempfile
 import logging
@@ -84,6 +85,9 @@ class HeadlessRenderer:
             temp_file.write(html_content)
             temp_html_path = temp_file.name
 
+        # Diretório de perfil exclusivo para permitir que o Chromium não-root crie sua user data
+        user_data_dir = tempfile.mkdtemp(prefix="chromium_ud_")
+
         try:
             temp_html_url = f"file:///{temp_html_path.replace(os.sep, '/')}"
             
@@ -92,6 +96,8 @@ class HeadlessRenderer:
                 self.chromium_binary,
                 "--headless=new",
                 "--no-sandbox",
+                f"--user-data-dir={user_data_dir}",
+                "--crash-dumps-dir=/tmp",
                 "--disable-dev-shm-usage",
                 "--disable-gpu",
                 "--disable-software-rasterizer",
@@ -114,11 +120,13 @@ class HeadlessRenderer:
                 err_text = stderr.decode("utf-8", errors="replace").strip()
                 logger.warning(f"Tentativa 1 com --headless=new falhou (código {process.returncode}): {err_text}. Tentando fallback clássico...")
                 
-                # Fallback para Chromium mais antigo usando --headless padrão
+                # Fallback para Chromium usando --headless clássico
                 cmd_fallback = [
                     self.chromium_binary,
                     "--headless",
                     "--no-sandbox",
+                    f"--user-data-dir={user_data_dir}",
+                    "--crash-dumps-dir=/tmp",
                     "--disable-dev-shm-usage",
                     "--disable-gpu",
                     "--hide-scrollbars",
@@ -143,6 +151,14 @@ class HeadlessRenderer:
 
         finally:
             if os.path.exists(temp_html_path):
-                os.remove(temp_html_path)
+                try:
+                    os.remove(temp_html_path)
+                except Exception:
+                    pass
+            if os.path.exists(user_data_dir):
+                try:
+                    shutil.rmtree(user_data_dir, ignore_errors=True)
+                except Exception:
+                    pass
 
 renderer = HeadlessRenderer()

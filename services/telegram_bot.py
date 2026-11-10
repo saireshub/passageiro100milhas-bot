@@ -19,7 +19,7 @@ from services.storage_service import storage_service
 logger = logging.getLogger(__name__)
 
 # Versão do deploy para rastreio no chat
-BOT_VERSION = "2026.11.10-gemini-v3"
+BOT_VERSION = "2026.11.10-gemini-v4"
 
 # Armazenamento em memória dos posts pendentes de aprovação
 PENDING_POSTS = {}

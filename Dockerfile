@@ -21,11 +21,12 @@ RUN --mount=type=bind,source=requirements.txt,target=requirements.txt \
 FROM python:3.11-slim AS runtime
 WORKDIR /app
 
-# Variáveis de ambiente Python
+# Variáveis de ambiente Python e Chromium
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONIOENCODING=utf-8 \
     CHROMIUM_PATH=/usr/bin/chromium \
+    HOME=/home/appuser \
     PATH="/opt/venv/bin:$PATH"
 
 # Instala Chromium e fontes com cache mounts do BuildKit
@@ -38,12 +39,12 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     fonts-noto-color-emoji \
     ca-certificates
 
-# Criação de usuário e grupo não-root dedicados
+# Criação de usuário e grupo não-root dedicados com diretório HOME e pastas temporárias com permissão
 RUN addgroup --system --gid 1001 appgroup && \
-    adduser --system --uid 1001 --ingroup appgroup appuser
-
-# Garante a existência do diretório de saída com permissão de escrita para appuser
-RUN mkdir -p /app/output && chown -R appuser:appgroup /app/output
+    adduser --system --uid 1001 --ingroup appgroup --home /home/appuser --disabled-password appuser && \
+    mkdir -p /home/appuser /tmp/chromium-data /app/output && \
+    chown -R appuser:appgroup /home/appuser /tmp/chromium-data /app/output && \
+    chmod 1777 /tmp
 
 # Copia virtualenv e código-fonte com ownership já atribuído
 COPY --from=build --chown=appuser:appgroup /opt/venv /opt/venv

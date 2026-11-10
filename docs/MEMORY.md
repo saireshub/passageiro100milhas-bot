@@ -50,4 +50,5 @@
 | `TasksOperationsNotAllowed` no ACR | Azure for Students bloqueia `az acr build` na nuvem | Utilizar **GitHub Actions** gratuito para compilar a imagem e fazer push ao ACR. |
 | Erro OCR / Extração de imagem | `ocr_extractor` antigo hardcoded para DeepSeek inexistente | Migração para `services/gemini_service.py` com Google Gemini multimodal (imagem e texto). |
 | Timeout / Falha JSON na imagem Gemini | Imagens pesadas (>5MB) de smartphones e respostas com markdown | Adicionada compressão Pillow (max 1536px), `responseMimeType: application/json` e parser regex flexível. |
+| Chromium CLI `Failed to create headless user data directory` | Usuário não-root no Docker sem pasta HOME ou `--user-data-dir` | Adicionado `--user-data-dir` dinâmico em `/tmp`, `HOME=/home/appuser` e permissão no Dockerfile. |
 | Injeção acidental em templates | Dados com caracteres especiais digitados no Telegram | Ativar `autoescape=True` no Jinja2 e sanitizar campos de texto. |
