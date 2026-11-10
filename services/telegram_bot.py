@@ -1,5 +1,6 @@
 import os
 import logging
+from functools import wraps
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     Application,
@@ -13,11 +14,50 @@ from config import Config
 from services.renderer import renderer
 from services.meta_api import meta_api
 from services.ocr_extractor import ocr_extractor
+from services.storage_service import storage_service
 
 logger = logging.getLogger(__name__)
 
 # Armazenamento em memória dos posts pendentes de aprovação
 PENDING_POSTS = {}
+
+def is_user_authorized(user_id: int | None) -> bool:
+    """Verifica se o remetente da mensagem está autorizado no TELEGRAM_USER_ID"""
+    if not user_id:
+        return False
+    authorized = Config.TELEGRAM_USER_ID
+    if not authorized or str(authorized).strip() in ("", "seu_telegram_user_id_aqui"):
+        logger.warning(f"Acesso negado: TELEGRAM_USER_ID não foi definido no .env (Tentativa do usuário ID: {user_id})")
+        return False
+    # Permite múltiplos IDs separados por vírgula se houver mais de um administrador
+    authorized_ids = [uid.strip() for uid in str(authorized).split(",") if uid.strip()]
+    return str(user_id) in authorized_ids
+
+def admin_only(func):
+    """Decorator para restringir o acesso apenas a administradores autorizados"""
+    @wraps(func)
+    async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE, *args, **kwargs):
+        user = update.effective_user
+        user_id = user.id if user else None
+        
+        if not is_user_authorized(user_id):
+            username = f"@{user.username}" if user and user.username else f"ID {user_id}"
+            logger.warning(f"Acesso não autorizado bloqueado: {username} (ID: {user_id})")
+            
+            if update.callback_query:
+                await update.callback_query.answer("⛔ Acesso não autorizado.", show_alert=True)
+            elif update.message:
+                await update.message.reply_text(
+                    "⛔ *Acesso Restrito!*\n\n"
+                    "Este bot é o painel de administração privado do *Passageiro 100 Milhas*.\n\n"
+                    f"Seu ID Telegram: `{user_id}` não possui permissão de acesso.\n"
+                    "Para liberar seu acesso, adicione este ID na variável `TELEGRAM_USER_ID` do arquivo `.env`.",
+                    parse_mode="Markdown"
+                )
+            return
+            
+        return await func(update, context, *args, **kwargs)
+    return wrapper
 
 def format_trecho_caption(data: dict) -> str:
     """Gera a legenda formatada para o Alerta de Trecho"""
@@ -51,10 +91,11 @@ def format_promo_caption(data: dict) -> str:
         f"#passageiro100milhas #milhas #pontos #livelo #latampass #promocao"
     )
 
+@admin_only
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     welcome_text = (
         "✈️ *Bem-vindo ao Bot Passageiro 100 Milhas!*\n\n"
-        "Este bot é o seu painel de controle para criação e publicação de posts no Instagram/Facebook.\n\n"
+        "Este bot é o seu painel de controle administrativo para criação e publicação de posts no Instagram/Facebook.\n\n"
         "*Comandos disponíveis:*\n"
         "🔹 `/trecho` - Gerar Alerta de Trecho (Ex: GRU ✈ CDG)\n"
         "🔹 `/promo` - Gerar Informativo de Promoção de Milhas\n"
@@ -62,8 +103,9 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     await update.message.reply_text(welcome_text, parse_mode="Markdown")
 
+@admin_only
 async def trecho_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Gera um post de exemplo/demonstração de Trecho"""
+    """Gera um post de demonstração de Trecho com aprovação inline"""
     await update.message.reply_text("⏳ Processando e renderizando o post de Trecho...")
     
     data = {
@@ -79,7 +121,7 @@ async def trecho_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "datas": "Outubro a Novembro/2026",
     }
     
-    # 1. Renderiza a imagem PNG
+    # 1. Renderiza a imagem PNG via Chromium CLI / Headless
     image_path = await renderer.render_trecho(data)
     caption = format_trecho_caption(data)
     
@@ -108,8 +150,9 @@ async def trecho_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=reply_markup
         )
 
+@admin_only
 async def promo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Gera um post de exemplo/demonstração de Promoção"""
+    """Gera um post de demonstração de Promoção com aprovação inline"""
     await update.message.reply_text("⏳ Processando e renderizando o post de Promoção...")
     
     data = {
@@ -150,6 +193,7 @@ async def promo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=reply_markup
         )
 
+@admin_only
 async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Trata os cliques nos botões inline de aprovação ou cancelamento"""
     query = update.callback_query
@@ -165,18 +209,28 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     post_info = PENDING_POSTS[post_id]
 
     if action == "pub_":
-        await query.edit_message_caption(caption="⏳ Publicando no Instagram via Meta Graph API...")
+        await query.edit_message_caption(caption="⏳ Fazendo upload da imagem para o Azure Blob Storage...")
         
-        # Chamada da API da Meta (se não configurada, retorna simulação)
-        res = meta_api.publish_photo(post_info["image_path"], post_info["caption"])
+        try:
+            # 1. Faz upload da imagem para o Azure Blob Storage gerando a URL com SAS
+            image_url = storage_service.upload_image(post_info["image_path"])
+        except Exception as e:
+            logger.error(f"Erro no upload da imagem para a nuvem: {e}")
+            await query.edit_message_caption(caption=f"❌ *Erro no upload da imagem:* `{e}`", parse_mode="Markdown")
+            return
+
+        await query.edit_message_caption(caption="⏳ Imagem carregada na nuvem. Publicando no Instagram via Meta Graph API...")
+        
+        # 2. Chama a Meta Graph API passando a URL pública
+        res = meta_api.publish_photo(image_url, post_info["caption"])
         
         if res.get("status") in ["success", "simulated"]:
             msg = f"✅ *POST PUBLICADO COM SUCESSO!*\nID: `{res.get('id')}`"
             if res.get("status") == "simulated":
-                msg += "\n\n*(Modo Simulação: Configure META_ACCESS_TOKEN no .env para publicar no Instagram real)*"
+                msg += "\n\n*(Modo Simulação: Configure credenciais reais da Meta no .env para publicar no Instagram real)*"
             await query.edit_message_caption(caption=msg, parse_mode="Markdown")
         else:
-            await query.edit_message_caption(caption=f"❌ *Erro ao publicar:* {res.get('error')}", parse_mode="Markdown")
+            await query.edit_message_caption(caption=f"❌ *Erro ao publicar na Meta:* `{res.get('error')}`", parse_mode="Markdown")
             
         del PENDING_POSTS[post_id]
 
@@ -184,6 +238,7 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_caption(caption="❌ Publicação cancelada pelo administrador.")
         del PENDING_POSTS[post_id]
 
+@admin_only
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Processa fotos enviadas para o bot extraindo texto via OCR"""
     await update.message.reply_text("🔍 Recebi sua imagem. Analisando via OCR...")
@@ -196,10 +251,10 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if extracted_text:
         await update.message.reply_text(f"📝 *Texto extraído da imagem:*\n\n`{extracted_text[:1000]}`", parse_mode="Markdown")
     else:
-        await update.message.reply_text("⚠️ Não foi possível extrair dados da imagem ou a chave DEEPSEEK_API_KEY não está configurada no `.env`.")
+        await update.message.reply_text("⚠️ Não foi possível extrair dados da imagem ou as chaves de OCR (Gemini/DeepSeek) não estão configuradas no `.env`.")
 
 def setup_telegram_bot() -> Application:
-    """Inicializa o bot do Telegram com todos os handlers"""
+    """Inicializa o bot do Telegram com todos os handlers e verificações"""
     token = Config.TELEGRAM_BOT_TOKEN
     if not token or token == "seu_token_telegram_aqui":
         logger.warning("TELEGRAM_BOT_TOKEN não configurado no .env")

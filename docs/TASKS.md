@@ -51,3 +51,6 @@
 - [x] Estruturação modular inicial (`services/telegram_bot.py`, `services/renderer.py`, `services/meta_api.py`, `config.py`).
 - [x] Criação e padronização de `Dockerfile` (multi-stage/non-root), `compose.yaml` e `.dockerignore` alinhados às skills Docker.
 - [x] Elaboração das regras do sistema e convenção de commits em português.
+- [x] Implementação da trava de segurança por `TELEGRAM_USER_ID` com decorator `@admin_only`.
+- [x] Criação do serviço `services/storage_service.py` com integração ao Azure Blob Storage e geração de SAS URLs de 24h para a Meta Graph API.
+- [x] Refinamento da verificação de status do Media Container na Meta Graph API com polling ativo.
