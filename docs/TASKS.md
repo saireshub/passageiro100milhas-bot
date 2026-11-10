@@ -3,56 +3,41 @@
 ---
 
 ## 📌 Status Atual do Projeto
-- **Fase Atual:** Finalização de Setup Operacional e Templates Visuais.
-- **Ambiente:** Desenvolvimento local com preparação de deploy na Azure VM B1s via Docker Compose.
+- **Fase Atual:** Deploy em Produção Concluído e Validação Operacional.
+- **Ambiente:** Em execução na nuvem via **Azure Container Apps** na região Mexico Central com CI/CD automatizado no GitHub Actions.
 
 ---
 
-## 🚀 To-Do (A Fazer)
+## 🚀 To-Do (Próximos Passos)
 
-### Fase 1: Setup de Contas & Chaves Externas
-- [ ] Concluir migração da conta do Instagram para perfil Profissional/Criador.
-- [ ] Vincular a Página correspondente no Facebook.
-- [ ] Configurar aplicativo no Meta for Developers e aprovar escopo `instagram_content_publish`.
-- [x] Gerar Token de Acesso da Meta e preencher no `.env` (configurado token que não expira).
-- [ ] Criar e configurar a bio oficial para o Instagram e Facebook (alinhada à identidade visual e Beacons).
-- [ ] Obter credenciais do Azure for Students e provisionar VM `Standard_B1s` Ubuntu 24.04.
+### Fase 1: Refinamento Visual & Templates
+- [ ] Ajustar estilização fina de cores e sombras em `templates/trecho_template.html` conforme identidade visual oficial.
+- [ ] Ajustar fontes e cards comparativos em `templates/promo_template.html`.
+- [ ] Testar injeção de fotos dinâmicas de fundo em alta resolução para os alertas de emissão.
 
-### Fase 2: Templates Visuais & Renderização
-- [ ] Finalizar estilização CSS de `templates/trecho_template.html` (1080x1350px).
-- [ ] Finalizar estilização CSS de `templates/promo_template.html`.
-- [ ] Testar injeção de imagens de fundo dinâmicas em `templates/trecho_template.html`.
+### Fase 2: Backend & Novas Funcionalidades
+- [ ] Implementar fluxo de conversa guiada (`ConversationHandler`) passo a passo para o comando `/promo`.
+- [ ] Refinar extração OCR via Google Gemini para capturas de tela dos programas Smiles e Livelo.
+- [ ] Adicionar botão de "Editar dados" no teclado inline de prévia antes de confirmar a publicação.
 
-### Fase 3: Módulos de Backend & Integração
-- [ ] Implementar fluxo conversacional guiado `/promo` no `services/telegram_bot.py`.
-- [ ] Refinar extração OCR inteligente para prints de telas Smiles, LATAM Pass e Livelo.
-- [ ] Integrar testes ponta a ponta de publicação direta na Meta Graph API com permalink de retorno.
-
-### Fase 4: Deploy & Automação 24/7
-- [ ] Conectar via SSH na VM Azure B1s e clonar o repositório.
-- [ ] Configurar arquivo `.env` na VM.
-- [ ] Subir containers com `docker compose up -d --build`.
-- [ ] Configurar rotina periódica de limpeza de arquivos antigos em `output/`.
-
----
-
-## 🔄 In Progress (Em Andamento)
-
-- [x] Padronização completa da documentação técnica e regras de agentes no novo padrão oficial (9 arquivos).
-- [ ] Validação do motor de renderização `services/renderer.py` usando Chromium CLI sem dependências restritivas no Windows.
+### Fase 3: Monitoramento Contínuo
+- [ ] Acompanhar métricas de consumo de CPU/Memória no painel do Azure Container Apps.
+- [ ] Monitorar alertas de gastos por e-mail configurados no Azure Cost Management.
 
 ---
 
 ## ✅ Done (Concluído)
 
 - [x] Definição de arquitetura e modelo operacional do MVP (Telegram CMS com Human-in-the-Loop).
-- [x] Avaliação técnica e seleção de provedor de hospedagem (Azure for Students VM B1s vs Render vs Oracle).
-- [x] Criação do bot Telegram via `@BotFather` e obtenção do `TELEGRAM_BOT_TOKEN`.
-- [x] Estruturação modular inicial (`services/telegram_bot.py`, `services/renderer.py`, `services/meta_api.py`, `config.py`).
-- [x] Criação e padronização de `Dockerfile` (multi-stage/non-root), `compose.yaml` e `.dockerignore` alinhados às skills Docker.
-- [x] Elaboração das regras do sistema e convenção de commits em português.
+- [x] Criação e configuração do bot Telegram via `@BotFather` e obtenção do `TELEGRAM_BOT_TOKEN`.
+- [x] Estruturação modular (`services/telegram_bot.py`, `services/renderer.py`, `services/storage_service.py`, `services/meta_api.py`, `config.py`).
+- [x] Criação e padronização do `Dockerfile` multi-stage com Python 3.11 e Chromium CLI.
 - [x] Implementação da trava de segurança por `TELEGRAM_USER_ID` com decorator `@admin_only`.
 - [x] Criação do serviço `services/storage_service.py` com integração ao Azure Blob Storage e geração de SAS URLs de 24h para a Meta Graph API.
-- [x] Refinamento da verificação de status do Media Container na Meta Graph API com polling ativo.
-- [x] Configuração de pipeline CI/CD via GitHub Actions e deploy no Azure Container Apps.
-
+- [x] Refinamento da verificação de status do Media Container na Meta Graph API com polling ativo (`status_code == 'FINISHED'`).
+- [x] Provisionamento do grupo de recursos `rg-passageiro100milhas-mx` no Mexico Central.
+- [x] Provisionamento da Conta de Armazenamento `stpassageiro100milhas` com container `passageiro100milhasbot`.
+- [x] Provisionamento do Azure Container Registry (ACR) `crpassageiro100milhas`.
+- [x] Provisionamento do Azure Container Apps `app-passageiro100milhas` (0.5 vCPU, 1.0 GiB RAM, Ingress desabilitado).
+- [x] Configuração da esteira de CI/CD automatizada no GitHub Actions (`.github/workflows/deploy.yml`).
+- [x] Injeção segura de variáveis de ambiente no Container App e início da execução contínua 24/7.
