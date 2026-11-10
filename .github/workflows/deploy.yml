@@ -30,3 +30,4 @@ jobs:
           context: .
           push: true
           tags: crpassageiro100milhas.azurecr.io/passageiro100milhas-bot:latest
+
