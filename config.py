@@ -14,9 +14,10 @@ class Config:
     AZURE_STORAGE_CONNECTION_STRING: str = os.getenv("AZURE_STORAGE_CONNECTION_STRING", "")
     AZURE_STORAGE_CONTAINER_NAME: str = os.getenv("AZURE_STORAGE_CONTAINER_NAME", "passageiro100milhasbot")
     
-    # Meta Graph API (Instagram & Facebook - suporta chaves com prefixo FB ou META)
+    # Meta Graph API (Instagram & Facebook)
     META_ACCESS_TOKEN: str = os.getenv("META_ACCESS_TOKEN") or os.getenv("FB_PAGE_ACCESS_TOKEN", "")
-    INSTAGRAM_ACCOUNT_ID: str = os.getenv("INSTAGRAM_ACCOUNT_ID") or os.getenv("FB_PAGE_ID", "")
+    FB_PAGE_ID: str = os.getenv("FB_PAGE_ID", "1328782080324808")
+    INSTAGRAM_ACCOUNT_ID: str = os.getenv("INSTAGRAM_ACCOUNT_ID", "17841467398304099")
     
     # Inteligência Artificial / OCR (Google Gemini)
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")

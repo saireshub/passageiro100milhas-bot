@@ -19,7 +19,7 @@ from services.storage_service import storage_service
 logger = logging.getLogger(__name__)
 
 # Versão do deploy para rastreio no chat
-BOT_VERSION = "2026.11.10-gemini-v5"
+BOT_VERSION = "2026.11.10-gemini-v6"
 
 # Armazenamento em memória dos posts pendentes de aprovação
 PENDING_POSTS = {}
@@ -234,15 +234,29 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.edit_message_caption(caption=f"❌ *Erro no upload da imagem:* `{e}`", parse_mode="Markdown")
             return
 
-        await query.edit_message_caption(caption="⏳ Imagem na nuvem. Publicando no Instagram via Meta Graph API...")
+        await query.edit_message_caption(caption="⏳ Imagem na nuvem. Publicando simultaneamente no Instagram e Facebook...")
         
         res = meta_api.publish_photo(image_url, post_info["caption"])
         
         if res.get("status") in ["success", "simulated"]:
-            post_id = res.get('id')
-            msg = f"✅ *POST PUBLICADO NO INSTAGRAM COM SUCESSO!*\n\n📸 Perfil: *@passageiro100milhas*\n🆔 ID do Post: `{post_id}`"
+            ig_id = res.get("instagram_id")
+            fb_id = res.get("facebook_id")
+            
+            lines = ["✅ *PUBLICAÇÃO REALIZADA COM SUCESSO!*\n"]
+            if ig_id:
+                lines.append(f"📸 *Instagram:* [@passageiro100milhas](https://instagram.com/passageiro100milhas) (`{ig_id}`)")
+            elif res.get("instagram_error"):
+                lines.append(f"⚠️ *Instagram:* `{res.get('instagram_error')}`")
+
+            if fb_id:
+                lines.append(f"📘 *Facebook:* [Página Passageiro 100 Milhas](https://facebook.com/{Config.FB_PAGE_ID}) (`{fb_id}`)")
+            elif res.get("facebook_error"):
+                lines.append(f"⚠️ *Facebook:* `{res.get('facebook_error')}`")
+
             if res.get("status") == "simulated":
-                msg += "\n\n*(Modo Simulação: Configure credenciais reais da Meta no .env para publicar no Instagram real)*"
+                lines.append("\n*(Modo Simulação)*")
+
+            msg = "\n".join(lines)
             await query.edit_message_caption(caption=msg, parse_mode="Markdown")
         else:
             await query.edit_message_caption(caption=f"❌ *Erro ao publicar na Meta:* `{res.get('error')}`", parse_mode="Markdown")
