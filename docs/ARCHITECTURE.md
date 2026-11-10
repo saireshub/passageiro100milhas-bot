@@ -130,7 +130,7 @@ Todos os recursos do projeto estão centralizados em um único grupo de recursos
 
 ## 5. Pipeline de CI/CD (GitHub Actions)
 
-A esteira de deploy automático opera através do arquivo [`.github/workflows/deploy.yml`](file:///.github/workflows/deploy.yml):
+A esteira de deploy automático opera através do arquivo [`.github/workflows/deploy.yml`](file:///.github/workflows/deploy.yml) com autenticação nativa **OpenID Connect (OIDC)** via Identidade Gerenciada:
 
 ```text
 [Desenvolvedor] ── git push origin main ──> [GitHub Actions Runner]
@@ -143,11 +143,13 @@ A esteira de deploy automático opera através do arquivo [`.github/workflows/de
                                                    │      ├── :latest (ponteiro de conveniência)
                                                    │      └── :main (branch de produção)
                                                    ├─► 5. Compilação com injeção de COMMIT_SHA e cache BuildKit (gha)
-                                                   └─► 6. Push automatizado para o Azure Container Registry
+                                                   ├─► 6. Autenticação Azure OIDC sem senhas (azure/login@v2)
+                                                   └─► 7. Atualização automática do Azure Container Apps (CD 100% autônomo)
 ```
 
 ### Estratégia de Versionamento e Tags Docker
 Seguindo as melhores práticas oficiais da documentação do Docker (`docker-build-strategies`):
 1. **Tags Imutáveis (`:sha-xxxxxxx`):** Cada commit gera uma imagem com identificador único baseado no commit SHA do Git, garantindo rastreabilidade exata e prevenindo problemas de cache em nós do Azure Container Apps.
-2. **Injeção de Metadados (`COMMIT_SHA`):** O commit SHA é injetado como variável de ambiente no container em tempo de build, permitindo que o bot informe sua versão exata em tempo de execução através do comando `/status` no Telegram.
-3. **Cache BuildKit GitHub Actions (`type=gha`):** As camadas do Dockerfile são cacheadas nativamente entre execuções do workflow, reduzindo o tempo de compilação de minutos para segundos.
+2. **Deploy Automático sem Cliques (CD):** O GitHub Actions assume a identidade `id-github-passageiro100milhas` via OIDC e executa `az containerapp update` diretamente com a tag única do commit, criando uma nova revisão na hora.
+3. **Injeção de Metadados (`COMMIT_SHA`):** O commit SHA é injetado como variável de ambiente no container em tempo de build, permitindo que o bot informe sua versão exata em tempo de execução através do comando `/status` no Telegram.
+4. **Cache BuildKit GitHub Actions (`type=gha`):** As camadas do Dockerfile são cacheadas nativamente entre execuções do workflow, reduzindo o tempo de compilação de minutos para segundos.

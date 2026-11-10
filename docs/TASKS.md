@@ -49,3 +49,4 @@
 - [x] Correção do Chromium no Docker com `--user-data-dir` temporário em `/tmp` e `HOME=/home/appuser`.
 - [x] Automação oficial de tags Docker via `docker/metadata-action` com SHA do Git e cache BuildKit (`type=gha`).
 - [x] Atualização da imagem base do Dockerfile para Python 3.12 slim.
+- [x] Configuração de Continuous Deployment (CD) 100% autônomo com Azure Managed Identity e OIDC.
