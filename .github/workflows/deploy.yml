@@ -34,7 +34,7 @@ jobs:
         with:
           images: crpassageiro100milhas.azurecr.io/passageiro100milhas-bot
           tags: |
-            type=sha,format=short,prefix=sha-
+            type=sha,format=short,prefix=sha-,priority=999
             type=ref,event=branch
             type=semver,pattern={{version}}
             type=raw,value=latest,enable={{is_default_branch}}
@@ -62,8 +62,12 @@ jobs:
         env:
           ALL_TAGS: ${{ steps.meta.outputs.tags }}
         run: |
-          IMAGE_TAG=$(echo "$ALL_TAGS" | head -n 1)
-          echo "Fazendo deploy no Azure Container Apps com a imagem: $IMAGE_TAG"
+          IMAGE_TAG=$(echo "$ALL_TAGS" | grep ':sha-' | head -n 1)
+          if [ -z "$IMAGE_TAG" ]; then
+            echo "Erro: Tag SHA imutável não encontrada em ALL_TAGS: $ALL_TAGS"
+            exit 1
+          fi
+          echo "Fazendo deploy no Azure Container Apps com a imagem imutável: $IMAGE_TAG"
           az containerapp update \
             --name app-passageiro100milhas \
             --resource-group rg-passageiro100milhas-mx \
