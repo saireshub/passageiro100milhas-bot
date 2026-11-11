@@ -5,15 +5,20 @@ import shutil
 import asyncio
 import tempfile
 import logging
+from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
 from config import Config
+from services.storage_service import storage_service
 
 logger = logging.getLogger(__name__)
+STATE_BLOB_NAME = "state/bg_index.txt"
 
 class HeadlessRenderer:
     def __init__(self):
         self.env = Environment(loader=FileSystemLoader(Config.TEMPLATES_DIR), autoescape=True)
         self.chromium_binary = self._find_chromium_binary()
+        self._bg_index: int | None = None
+        self._local_state_file = os.path.join(Config.OUTPUT_DIR, ".bg_index")
 
     def _find_chromium_binary(self) -> str:
         """Localiza o executável do Chromium / chrome-headless-shell para Windows e Linux/Docker"""
@@ -57,10 +62,60 @@ class HeadlessRenderer:
 
         raise FileNotFoundError("Nenhum navegador Chromium encontrado para renderização.")
 
+    def _get_background_files(self) -> list[str]:
+        """Lista as fotos de fundo em templates/assets ordenadas sequencialmente (bg_01..bg_07)"""
+        assets_dir = os.path.join(Config.TEMPLATES_DIR, "assets")
+        files = sorted(glob.glob(os.path.join(assets_dir, "bg_*.*")))
+        return [f for f in files if f.lower().endswith((".jpg", ".jpeg", ".png", ".webp"))]
+
+    def _get_next_background_uri(self) -> str | None:
+        """Seleciona a próxima foto de fundo em ciclo sequencial (1 -> 7 -> 1) persistindo o índice"""
+        bg_files = self._get_background_files()
+        if not bg_files:
+            return None
+
+        if self._bg_index is None:
+            saved_val = None
+            if storage_service.is_configured:
+                saved_val = storage_service.get_state_value(STATE_BLOB_NAME)
+            if saved_val is None and os.path.exists(self._local_state_file):
+                try:
+                    with open(self._local_state_file, "r", encoding="utf-8") as f:
+                        saved_val = f.read().strip()
+                except Exception:
+                    pass
+            try:
+                self._bg_index = int(saved_val) % len(bg_files) if saved_val is not None else 0
+            except ValueError:
+                self._bg_index = 0
+
+        selected_path = bg_files[self._bg_index]
+        logger.info(f"Foto de fundo selecionada ({self._bg_index + 1}/{len(bg_files)}): {os.path.basename(selected_path)}")
+
+        next_index = (self._bg_index + 1) % len(bg_files)
+        self._bg_index = next_index
+
+        try:
+            with open(self._local_state_file, "w", encoding="utf-8") as f:
+                f.write(str(next_index))
+        except Exception:
+            pass
+
+        if storage_service.is_configured:
+            storage_service.set_state_value(STATE_BLOB_NAME, str(next_index))
+
+        return Path(selected_path).resolve().as_uri()
+
     async def render_trecho(self, data: dict) -> str:
         """Renderiza o template de Alerta de Trecho em imagem PNG (1080x1350)"""
+        render_data = dict(data)
+        if not render_data.get("imagem_fundo_url"):
+            bg_uri = self._get_next_background_uri()
+            if bg_uri:
+                render_data["imagem_fundo_url"] = bg_uri
+
         template = self.env.get_template("trecho_template.html")
-        html_content = template.render(**data)
+        html_content = template.render(**render_data)
         
         filename = f"post_trecho_{int(time.time())}.png"
         output_path = os.path.join(Config.OUTPUT_DIR, filename)
@@ -79,6 +134,27 @@ class HeadlessRenderer:
         await self._capture_screenshot(html_content, output_path)
         return output_path
 
+    def _build_chromium_cmd(self, headless_flag: str, user_data_dir: str, output_path: str, html_url: str) -> list[str]:
+        """Monta os argumentos CLI do Chromium para renderização headless segura"""
+        cmd = [
+            self.chromium_binary,
+            headless_flag,
+            "--no-sandbox",
+            "--allow-file-access-from-files",
+            f"--user-data-dir={user_data_dir}",
+            "--crash-dumps-dir=/tmp",
+            "--disable-dev-shm-usage",
+            "--disable-gpu",
+            "--hide-scrollbars",
+            f"--screenshot={output_path}",
+            "--window-size=1080,1350",
+            "--virtual-time-budget=2000",
+        ]
+        if headless_flag == "--headless=new":
+            cmd.extend(["--disable-software-rasterizer", "--run-all-compositor-stages-before-draw"])
+        cmd.append(html_url)
+        return cmd
+
     async def _capture_screenshot(self, html_content: str, output_path: str):
         """Salva um HTML temporário e executa a captura headless via Chromium CLI no Linux e Windows"""
         with tempfile.NamedTemporaryFile("w", delete=False, suffix=".html", encoding="utf-8") as temp_file:
@@ -89,25 +165,8 @@ class HeadlessRenderer:
         user_data_dir = tempfile.mkdtemp(prefix="chromium_ud_")
 
         try:
-            temp_html_url = f"file:///{temp_html_path.replace(os.sep, '/')}"
-            
-            # Flags essenciais para containers Docker Linux headless sem servidor gráfico X11
-            cmd = [
-                self.chromium_binary,
-                "--headless=new",
-                "--no-sandbox",
-                f"--user-data-dir={user_data_dir}",
-                "--crash-dumps-dir=/tmp",
-                "--disable-dev-shm-usage",
-                "--disable-gpu",
-                "--disable-software-rasterizer",
-                "--hide-scrollbars",
-                f"--screenshot={output_path}",
-                "--window-size=1080,1350",
-                "--virtual-time-budget=2000",
-                "--run-all-compositor-stages-before-draw",
-                temp_html_url
-            ]
+            temp_html_url = Path(temp_html_path).resolve().as_uri()
+            cmd = self._build_chromium_cmd("--headless=new", user_data_dir, output_path, temp_html_url)
 
             process = await asyncio.create_subprocess_exec(
                 *cmd,
@@ -120,21 +179,7 @@ class HeadlessRenderer:
                 err_text = stderr.decode("utf-8", errors="replace").strip()
                 logger.warning(f"Tentativa 1 com --headless=new falhou (código {process.returncode}): {err_text}. Tentando fallback clássico...")
                 
-                # Fallback para Chromium usando --headless clássico
-                cmd_fallback = [
-                    self.chromium_binary,
-                    "--headless",
-                    "--no-sandbox",
-                    f"--user-data-dir={user_data_dir}",
-                    "--crash-dumps-dir=/tmp",
-                    "--disable-dev-shm-usage",
-                    "--disable-gpu",
-                    "--hide-scrollbars",
-                    f"--screenshot={output_path}",
-                    "--window-size=1080,1350",
-                    "--virtual-time-budget=2000",
-                    temp_html_url
-                ]
+                cmd_fallback = self._build_chromium_cmd("--headless", user_data_dir, output_path, temp_html_url)
                 process2 = await asyncio.create_subprocess_exec(
                     *cmd_fallback,
                     stdout=asyncio.subprocess.PIPE,

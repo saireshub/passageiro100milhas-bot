@@ -82,5 +82,32 @@ class StorageService:
             logger.error(f"Falha ao realizar upload para o Azure Blob Storage: {e}")
             raise e
 
+    def get_state_value(self, blob_name: str) -> str | None:
+        """Lê um valor de estado persistente no Azure Blob Storage"""
+        client = self._get_client()
+        if not client:
+            return None
+        try:
+            blob_client = client.get_blob_client(container=self.container_name, blob=blob_name)
+            if not blob_client.exists():
+                return None
+            return blob_client.download_blob().readall().decode("utf-8").strip()
+        except Exception as e:
+            logger.warning(f"Não foi possível ler estado '{blob_name}' no Blob Storage: {e}")
+            return None
+
+    def set_state_value(self, blob_name: str, value: str) -> bool:
+        """Salva um valor de estado persistente no Azure Blob Storage"""
+        client = self._get_client()
+        if not client:
+            return False
+        try:
+            blob_client = client.get_blob_client(container=self.container_name, blob=blob_name)
+            blob_client.upload_blob(value.encode("utf-8"), overwrite=True)
+            return True
+        except Exception as e:
+            logger.warning(f"Não foi possível salvar estado '{blob_name}' no Blob Storage: {e}")
+            return False
+
 storage_service = StorageService()
 

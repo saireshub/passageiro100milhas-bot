@@ -13,7 +13,6 @@
 ### Fase 1: Refinamento Visual & Templates
 - [ ] Ajustar estilização fina de cores e sombras em `templates/trecho_template.html` conforme identidade visual oficial.
 - [ ] Ajustar fontes e cards comparativos em `templates/promo_template.html`.
-- [ ] Testar injeção de fotos dinâmicas de fundo em alta resolução para os alertas de emissão.
 
 ### Fase 2: Backend & Novas Funcionalidades
 - [ ] Implementar fluxo de conversa guiada (`ConversationHandler`) passo a passo para o comando `/promo`.
@@ -54,3 +53,4 @@
 - [x] Hardening e higiene: ativação de `autoescape=True` no Jinja2 e limpeza automática de arquivos `.png` temporários após postagem/cancelamento.
 - [x] Sincronização completa da documentação oficial do projeto (`ARCHITECTURE.md`, `MEMORY.md`, `SECURITY.md`, `TASKS.md`).
 - [x] Hardening de privacidade e logs: remoção de dados sensíveis do `/status`, resposta minimalista a não autorizados e envio de chaves API apenas via HTTP headers (`x-goog-api-key` e `Bearer`).
+- [x] Injeção dinâmica e rotação sequencial (1→7→1) de fotos de fundo otimizadas (`bg_01.jpg` a `bg_07.jpg`, 1080x1350px) em `trecho_template.html` com persistência no Azure Blob Storage.

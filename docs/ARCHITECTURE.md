@@ -96,13 +96,13 @@ passageiro100milhas-bot/
 ├── services/                     # Módulos desacoplados de serviços
 │   ├── telegram_bot.py           # Handlers e fluxos com trava @admin_only e limpeza de temp
 │   ├── gemini_service.py         # Extração multimodal (Vision & Text) via Google Gemini
-│   ├── renderer.py               # Renderizador Chromium CLI + Jinja2 (autoescape=True)
-│   ├── storage_service.py        # Integração Azure Blob Storage com SAS 24h
+│   ├── renderer.py               # Renderizador Chromium CLI + Jinja2 e rotação sequencial de fundos
+│   ├── storage_service.py        # Integração Azure Blob Storage (SAS 24h + estado state/bg_index.txt)
 │   └── meta_api.py               # Cliente Meta Graph API (Crossposting Instagram & Facebook)
 ├── templates/                    # Templates visuais dos posts (HTML/CSS)
 │   ├── trecho_template.html      # Template para Alerta de Trecho (Milhas)
 │   ├── promo_template.html       # Template para Informativo de Promoção
-│   └── assets/                   # Logotipos SVG da marca
+│   └── assets/                   # Logotipos SVG e fundos otimizados (bg_01.jpg..bg_07.jpg, 1080x1350)
 ├── .dockerignore                 # Exclusão de arquivos do contexto de build
 ├── .env.example                  # Modelo de variáveis de ambiente
 ├── config.py                     # Leitura e validação das variáveis do .env
