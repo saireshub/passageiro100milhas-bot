@@ -222,7 +222,8 @@
     .info-row {
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start;
+      gap: 16px;
     }
 
     .info-label {
@@ -231,12 +232,17 @@
       color: #64748b;
       text-transform: uppercase;
       letter-spacing: 0.8px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      padding-top: 2px;
     }
 
     .info-value {
-      font-size: 20px;
+      font-size: 19px;
       font-weight: 700;
       color: #ffffff;
+      text-align: right;
+      line-height: 1.3;
     }
 
     /* Prominent Bottom-Right Logo Card */
@@ -295,7 +301,7 @@
       <div class="cost-container">
         <div class="cost-label">Custo por Trecho a partir de</div>
         <div class="cost-value">{{ milhas | default("45.000", true) }} <span>MILHAS</span></div>
-        <div class="taxes-value">+ Taxas: R$ {{ taxas | default("250,00", true) }}</div>
+        <div class="taxes-value">+ Taxas: {{ taxas_formatada | default(taxas | default("a consultar", true), true) }}</div>
       </div>
     </div>
 

@@ -1,4 +1,5 @@
 import os
+import re
 import glob
 import time
 import shutil
@@ -13,6 +14,16 @@ from services.storage_service import storage_service
 
 logger = logging.getLogger(__name__)
 STATE_BLOB_NAME = "state/bg_index.txt"
+
+def format_taxas(taxas: object) -> str:
+    """Formata o valor de taxas com 'R$' apenas quando numérico; caso contrário retorna 'a consultar'."""
+    text = str(taxas).strip() if taxas is not None else ""
+    text = re.sub(r"^R\$\s*", "", text, flags=re.IGNORECASE).strip()
+    if not text or not re.search(r"\d", text):
+        if not text or any(term in text.lower() for term in ("consultar", "nao informado", "não informado", "taxas", "n/a")):
+            return "a consultar"
+        return text
+    return f"R$ {text}"
 
 class HeadlessRenderer:
     def __init__(self):
@@ -112,6 +123,7 @@ class HeadlessRenderer:
     async def render_trecho(self, data: dict) -> str:
         """Renderiza o template de Alerta de Trecho em imagem PNG (1080x1350)"""
         render_data = dict(data)
+        render_data["taxas_formatada"] = format_taxas(render_data.get("taxas"))
         if not render_data.get("imagem_fundo_url"):
             bg_uri = await asyncio.to_thread(self._get_next_background_uri)
             if bg_uri:

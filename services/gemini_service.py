@@ -31,9 +31,9 @@ Se for "trecho", use esta estrutura:
   "classe": "CLASSE EXECUTIVA, CLASSE ECONÔMICA ou PREMIUM ECONOMY",
   "programa": "Programa emissor (ex: LATAM PASS, SMILES, AZUL FIDELIDADE, TAP MILES&GO, IBERIA PLUS, FLYING BLUE)",
   "milhas": "Quantidade de milhas formatada (ex: 45.000 ou 72.000)",
-  "taxas": "Valor das taxas em reais (ex: 250,00 ou 380,00)",
+  "taxas": "Valor numérico das taxas em reais sem R$ (ex: 250,00 ou 380,00). Se a imagem/texto não informar o valor exato (ex: apenas '+ taxas'), retorne exatamente: a consultar",
   "companhia": "Companhia operadora (ex: LATAM Airlines, Air France, TAP)",
-  "datas": "Período ou meses encontrados (ex: Outubro a Novembro/2026)"
+  "datas": "Datas específicas visíveis no print em formato compacto (ex: 24/11, 25/11, 26/11, 28/11 e 29/11/2026). Se houver muitas datas (>6), liste as principais seguidas do mês/ano. Se não houver dias explícitos, informe apenas o mês/período (ex: Novembro/2026)"
 }
 
 ---
@@ -65,7 +65,7 @@ class GeminiService:
             "gemini-3.8-flash"
         ]
 
-    def _optimize_image(self, image_bytes: bytes, max_dim: int = 1536) -> tuple[bytes, str]:
+    def _optimize_image(self, image_bytes: bytes, max_dim: int = 1920) -> tuple[bytes, str]:
         """Redimensiona e otimiza a imagem para evitar timeouts de rede e reduzir latência"""
         try:
             img = Image.open(io.BytesIO(image_bytes))

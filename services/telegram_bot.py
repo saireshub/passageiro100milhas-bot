@@ -14,7 +14,7 @@ from telegram.ext import (
     ContextTypes,
 )
 from config import Config
-from services.renderer import renderer
+from services.renderer import renderer, format_taxas
 from services.meta_api import meta_api
 from services.gemini_service import gemini_service
 from services.storage_service import storage_service
@@ -63,6 +63,7 @@ def admin_only(func):
 
 def format_trecho_caption(data: dict) -> str:
     """Gera a legenda formatada para o Alerta de Trecho"""
+    taxas_txt = format_taxas(data.get("taxas"))
     return (
         f"🚨 ALERTA DE EMISSÃO: {data.get('origem_iata', 'GRU')} ✈️ {data.get('destino_iata', 'CDG')}\n\n"
         f"Classe: {data.get('classe', 'Executiva')}\n"
@@ -70,7 +71,7 @@ def format_trecho_caption(data: dict) -> str:
         f"Programa: {data.get('programa', 'LATAM Pass')}\n\n"
         f"💰 CUSTO POR TRECHO:\n"
         f"• Milhas: {data.get('milhas', '45.000')} milhas\n"
-        f"• Taxas: R$ {data.get('taxas', '250,00')}\n\n"
+        f"• Taxas: {taxas_txt}\n\n"
         f"📅 DATAS ENCONTRADAS:\n"
         f"{data.get('datas', 'Outubro a Novembro/2026')}\n\n"
         f"⚠️ Dica rápida: Disponibilidade sujeita à alteração rápida pelos programas. Encontrou? Emita imediatamente.\n\n"
