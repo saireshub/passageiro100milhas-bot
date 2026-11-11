@@ -82,6 +82,9 @@ passageiro100milhas-bot/
 ├── .github/
 │   └── workflows/
 │       └── deploy.yml            # Pipeline CI/CD no GitHub Actions (Build, Push & Deploy OIDC)
+├── assets/                       # Kit de identidade visual e mídias sociais (excluído da imagem Docker via .dockerignore)
+│   ├── logo/                     # Variações da marca, logo HD e avatar 1080x1080 para perfil social
+│   └── social/                   # Capa oficial do Facebook (HTML fonte + PNG 1640x624)
 ├── docs/                         # Documentação oficial do projeto
 │   ├── PRD.md
 │   ├── ARCHITECTURE.md

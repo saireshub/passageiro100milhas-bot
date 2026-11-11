@@ -17,6 +17,7 @@
 LICENSE
 docs/
 scratch/
+/assets/
 
 # Arquivos Docker
 Dockerfile*

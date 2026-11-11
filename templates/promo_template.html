@@ -16,8 +16,8 @@
       width: 1080px;
       height: 1350px;
       font-family: 'Outfit', 'Inter', sans-serif;
-      background: #090d16;
-      color: #ffffff;
+      background: linear-gradient(155deg, #F6F9FD 0%, #E7EFFA 100%);
+      color: #0F172A;
       overflow: hidden;
       position: relative;
     }
@@ -27,9 +27,9 @@
       position: absolute;
       top: -150px;
       right: -150px;
-      width: 600px;
-      height: 600px;
-      background: radial-gradient(circle, rgba(243, 112, 33, 0.25) 0%, rgba(9, 13, 22, 0) 70%);
+      width: 650px;
+      height: 650px;
+      background: radial-gradient(circle, rgba(245, 124, 0, 0.14) 0%, rgba(244, 247, 251, 0) 70%);
       z-index: 1;
     }
     
@@ -37,9 +37,9 @@
       position: absolute;
       bottom: -150px;
       left: -150px;
-      width: 650px;
-      height: 650px;
-      background: radial-gradient(circle, rgba(11, 59, 114, 0.4) 0%, rgba(9, 13, 22, 0) 70%);
+      width: 700px;
+      height: 700px;
+      background: radial-gradient(circle, rgba(0, 102, 204, 0.16) 0%, rgba(244, 247, 251, 0) 70%);
       z-index: 1;
     }
 
@@ -62,7 +62,7 @@
     }
 
     .badge-promo {
-      background: linear-gradient(135deg, #f37021, #ff9f43);
+      background: linear-gradient(135deg, #E66800, #F57C00);
       color: #ffffff;
       font-weight: 800;
       font-size: 24px;
@@ -70,31 +70,32 @@
       text-transform: uppercase;
       padding: 14px 30px;
       border-radius: 50px;
-      box-shadow: 0 10px 25px rgba(243, 112, 33, 0.4);
+      box-shadow: 0 10px 24px rgba(245, 124, 0, 0.28);
     }
 
     .badge-category {
-      background: rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.94);
       backdrop-filter: blur(12px);
       padding: 12px 24px;
       border-radius: 30px;
       font-weight: 700;
       font-size: 18px;
-      color: #e2e8f0;
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #003A80;
+      border: 1.5px solid rgba(0, 58, 128, 0.14);
+      box-shadow: 0 10px 26px rgba(0, 42, 92, 0.08);
       text-transform: uppercase;
       letter-spacing: 1px;
     }
 
     /* Main Card */
     .main-card {
-      background: rgba(18, 24, 38, 0.85);
+      background: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.12);
+      border: 1.5px solid rgba(0, 58, 128, 0.09);
       border-radius: 36px;
       padding: 45px 42px;
       margin: 15px 0;
-      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+      box-shadow: 0 28px 64px rgba(0, 42, 92, 0.12);
     }
 
     .transfer-flow {
@@ -102,21 +103,21 @@
       align-items: center;
       justify-content: space-between;
       margin-bottom: 25px;
-      background: rgba(255, 255, 255, 0.05);
+      background: #F1F6FC;
       padding: 18px 30px;
       border-radius: 20px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(0, 58, 128, 0.12);
     }
 
     .program-name {
       font-size: 32px;
       font-weight: 800;
-      color: #ffffff;
+      color: #003A80;
     }
 
     .arrow-icon {
       font-size: 36px;
-      color: #ff8c3b;
+      color: #F57C00;
       font-weight: 900;
     }
 
@@ -130,14 +131,14 @@
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 2px;
-      color: #94a3b8;
+      color: #475569;
     }
 
     .bonus-value {
       font-size: 98px;
       font-weight: 900;
       line-height: 1;
-      background: linear-gradient(135deg, #f37021, #ffbd59);
+      background: linear-gradient(135deg, #D95F00, #F57C00);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       letter-spacing: -3px;
@@ -150,15 +151,15 @@
       grid-template-columns: 1fr 1fr;
       gap: 18px;
       margin-top: 25px;
-      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      border-top: 1.5px solid rgba(0, 58, 128, 0.10);
       padding-top: 22px;
     }
 
     .rule-box {
-      background: rgba(255, 255, 255, 0.04);
+      background: #F8FAFD;
       border-radius: 20px;
       padding: 18px 22px;
-      border: 1px solid rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(0, 58, 128, 0.10);
     }
 
     .rule-title {
@@ -173,7 +174,7 @@
     .rule-desc {
       font-size: 22px;
       font-weight: 800;
-      color: #ffffff;
+      color: #003A80;
     }
 
     /* Footer Bar with Bottom-Right Logo */
@@ -186,14 +187,15 @@
 
     .footer-info-group {
       flex: 1;
-      background: rgba(18, 24, 38, 0.88);
+      background: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.12);
+      border: 1.5px solid rgba(0, 58, 128, 0.09);
       border-radius: 28px;
       padding: 22px 30px;
       display: flex;
       flex-direction: column;
       gap: 12px;
+      box-shadow: 0 18px 40px rgba(0, 42, 92, 0.10);
     }
 
     .info-row {
@@ -216,15 +218,15 @@
       border-radius: 12px;
       text-transform: uppercase;
       letter-spacing: 0.8px;
-      background: rgba(243, 112, 33, 0.2);
-      color: #ff8c3b;
-      border: 1px solid rgba(243, 112, 33, 0.4);
+      background: rgba(245, 124, 0, 0.12);
+      color: #D96200;
+      border: 1px solid rgba(245, 124, 0, 0.35);
     }
 
     .validity-value {
       font-size: 18px;
       font-weight: 700;
-      color: #ffffff;
+      color: #003A80;
     }
 
     /* Bottom-Right Logo Card */
@@ -232,7 +234,8 @@
       background: #ffffff;
       padding: 16px 26px;
       border-radius: 28px;
-      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45);
+      border: 1.5px solid rgba(0, 58, 128, 0.08);
+      box-shadow: 0 18px 40px rgba(0, 42, 92, 0.14);
       display: flex;
       align-items: center;
       justify-content: center;

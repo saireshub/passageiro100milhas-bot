@@ -16,8 +16,8 @@
       width: 1080px;
       height: 1350px;
       font-family: 'Outfit', 'Inter', sans-serif;
-      background: radial-gradient(circle at 80% 20%, #1e293b 0%, #0b0f19 100%);
-      color: #ffffff;
+      background: linear-gradient(155deg, #F4F7FB 0%, #E6EFFA 100%);
+      color: #0F172A;
       overflow: hidden;
       position: relative;
     }
@@ -32,7 +32,7 @@
       background-image: url('{{ imagem_fundo_url | default("https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=1080&auto=format&fit=crop", true) }}');
       background-size: cover;
       background-position: center;
-      filter: brightness(0.55) contrast(1.15);
+      filter: brightness(0.95) contrast(1.04) saturate(1.12);
       z-index: 1;
     }
     
@@ -43,9 +43,9 @@
       width: 100%;
       height: 100%;
       background: linear-gradient(180deg, 
-        rgba(11, 15, 25, 0.88) 0%, 
-        rgba(11, 15, 25, 0.45) 45%, 
-        rgba(11, 15, 25, 0.96) 100%);
+        rgba(244, 247, 251, 0.78) 0%, 
+        rgba(0, 42, 92, 0.12) 46%, 
+        rgba(244, 247, 251, 0.86) 100%);
       z-index: 2;
     }
     
@@ -83,28 +83,29 @@
     }
 
     .badge-category {
-      background: rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.92);
       backdrop-filter: blur(12px);
       padding: 12px 24px;
       border-radius: 30px;
       font-weight: 700;
       font-size: 18px;
-      color: #e2e8f0;
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #003A80;
+      border: 1.5px solid rgba(0, 58, 128, 0.14);
+      box-shadow: 0 10px 26px rgba(0, 42, 92, 0.10);
       text-transform: uppercase;
       letter-spacing: 1px;
     }
     
     /* Card da Rota Principal */
     .route-card {
-      background: rgba(18, 24, 38, 0.82);
+      background: rgba(255, 255, 255, 0.92);
       backdrop-filter: blur(24px);
       -webkit-backdrop-filter: blur(24px);
-      border: 1px solid rgba(255, 255, 255, 0.14);
+      border: 1.5px solid rgba(255, 255, 255, 0.96);
       border-radius: 38px;
       padding: 48px 42px;
       margin: 20px 0;
-      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.55);
+      box-shadow: 0 28px 64px rgba(0, 42, 92, 0.16);
     }
 
     .meta-tags {
@@ -118,17 +119,17 @@
       font-weight: 700;
       padding: 8px 18px;
       border-radius: 12px;
-      background: rgba(255, 255, 255, 0.1);
-      color: #e0e6ed;
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: #EDF3FB;
+      color: #003A80;
+      border: 1px solid rgba(0, 58, 128, 0.14);
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
 
     .tag.cabin {
-      background: rgba(243, 112, 33, 0.20);
-      color: #ff8c3b;
-      border-color: rgba(243, 112, 33, 0.45);
+      background: rgba(245, 124, 0, 0.12);
+      color: #D96200;
+      border-color: rgba(245, 124, 0, 0.35);
     }
 
     .route-display {
@@ -142,27 +143,36 @@
       font-size: 82px;
       font-weight: 900;
       letter-spacing: -1px;
-      color: #ffffff;
-      text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      color: #003A80;
+      text-shadow: none;
     }
 
     .city-name {
       font-size: 22px;
-      font-weight: 500;
-      color: #94a3b8;
+      font-weight: 600;
+      color: #475569;
       margin-top: 4px;
     }
 
     .flight-icon {
-      font-size: 48px;
-      color: #ff8c3b;
-      transform: rotate(90deg);
-      filter: drop-shadow(0 0 16px rgba(243, 112, 33, 0.65));
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      padding: 0 28px;
+      color: #F57C00;
+    }
+
+    .flight-trace {
+      flex: 1;
+      height: 0;
+      border-top: 2.5px dashed rgba(0, 58, 128, 0.22);
     }
 
     /* Destaque do Custo */
     .cost-container {
-      border-top: 1px dashed rgba(255, 255, 255, 0.18);
+      border-top: 1.5px dashed rgba(0, 58, 128, 0.16);
       padding-top: 30px;
       display: flex;
       flex-direction: column;
@@ -174,14 +184,14 @@
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 1px;
-      color: #94a3b8;
+      color: #475569;
     }
 
     .cost-value {
       font-size: 86px;
       font-weight: 900;
       line-height: 1;
-      background: linear-gradient(135deg, #f37021, #ff9f43);
+      background: linear-gradient(135deg, #D95F00, #F57C00);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       letter-spacing: -2px;
@@ -194,8 +204,8 @@
 
     .taxes-value {
       font-size: 28px;
-      font-weight: 600;
-      color: #e2e8f0;
+      font-weight: 700;
+      color: #1E293B;
       margin-top: 6px;
     }
 
@@ -209,14 +219,15 @@
 
     .footer-info-group {
       flex: 1;
-      background: rgba(18, 24, 38, 0.88);
-      backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(18px);
+      border: 1.5px solid rgba(255, 255, 255, 0.96);
       border-radius: 28px;
       padding: 22px 30px;
       display: flex;
       flex-direction: column;
       gap: 12px;
+      box-shadow: 0 18px 40px rgba(0, 42, 92, 0.12);
     }
 
     .info-row {
@@ -240,7 +251,7 @@
     .info-value {
       font-size: 19px;
       font-weight: 700;
-      color: #ffffff;
+      color: #003A80;
       text-align: right;
       line-height: 1.3;
     }
@@ -250,7 +261,8 @@
       background: #ffffff;
       padding: 16px 26px;
       border-radius: 28px;
-      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45);
+      border: 1.5px solid rgba(0, 58, 128, 0.08);
+      box-shadow: 0 18px 40px rgba(0, 42, 92, 0.14);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -290,7 +302,13 @@
           <div class="city-name">{{ origem_cidade | default("São Paulo", true) }}</div>
         </div>
 
-        <div class="flight-icon">✈</div>
+        <div class="flight-icon">
+          <span class="flight-trace"></span>
+          <svg width="42" height="42" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" transform="rotate(90 12 12)"/>
+          </svg>
+          <span class="flight-trace"></span>
+        </div>
 
         <div class="destination" style="text-align: right;">
           <div class="iata-code">{{ destino_iata | default("CDG", true) }}</div>

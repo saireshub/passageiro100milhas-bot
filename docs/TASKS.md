@@ -11,8 +11,8 @@
 ## 🚀 To-Do (Próximos Passos)
 
 ### Fase 1: Refinamento Visual & Templates
-- [ ] Ajustar estilização fina de cores e sombras em `templates/trecho_template.html` conforme identidade visual oficial.
-- [ ] Ajustar fontes e cards comparativos em `templates/promo_template.html`.
+- [x] Ajustar estilização fina de cores e sombras em `templates/trecho_template.html` conforme identidade visual oficial (tema claro luminoso).
+- [x] Ajustar fontes e cards comparativos em `templates/promo_template.html` (tema claro luminoso).
 
 ### Fase 2: Backend & Novas Funcionalidades
 - [ ] Implementar fluxo de conversa guiada (`ConversationHandler`) passo a passo para o comando `/promo`.
@@ -55,3 +55,4 @@
 - [x] Sincronização completa da documentação oficial do projeto (`ARCHITECTURE.md`, `MEMORY.md`, `SECURITY.md`, `TASKS.md`).
 - [x] Hardening de privacidade e logs: remoção de dados sensíveis do `/status`, resposta minimalista a não autorizados e envio de chaves API apenas via HTTP headers (`x-goog-api-key` e `Bearer`).
 - [x] Injeção dinâmica e rotação sequencial (1→7→1) de fotos de fundo otimizadas (`bg_01.jpg` a `bg_07.jpg`, 1080x1350px) em `trecho_template.html` com persistência no Azure Blob Storage.
+- [x] Melhoria de nitidez e resolução da logo social original sem alteração de traço (`logo-passageiro100milhas-perfil-1080x1080.png`, `logo-passageiro100milhas-hd.png`, versão transparente), criação da capa oficial do Facebook em 1640x624 (`assets/social/facebook-capa.png`) e modernização dos templates de post para paleta clara luminosa.
