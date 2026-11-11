@@ -100,7 +100,7 @@ class GeminiService:
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
             try:
                 logger.info(f"Tentando extração com Gemini modelo: {model}")
-                response = requests.post(url, headers=headers, json=payload, timeout=30)
+                response = requests.post(url, headers=headers, json=payload, timeout=(10, 60))
                 
                 if response.status_code == 200:
                     data = response.json()

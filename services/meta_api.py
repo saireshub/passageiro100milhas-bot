@@ -46,7 +46,7 @@ class MetaGraphAPI:
         try:
             test_url = f"{self.base_url}/{target_id}"
             params = {"fields": "id,username,instagram_business_account"}
-            res = requests.get(test_url, params=params, headers=self._auth_headers(), timeout=15)
+            res = requests.get(test_url, params=params, headers=self._auth_headers(), timeout=(10, 20))
             if res.status_code == 200:
                 data = res.json()
                 if "instagram_business_account" in data and "id" in data["instagram_business_account"]:
@@ -84,7 +84,7 @@ class MetaGraphAPI:
                 "access_token": self.access_token
             }
             logger.info(f"Criando container no Instagram ({ig_account_id})...")
-            res = requests.post(container_url, data=payload, timeout=30)
+            res = requests.post(container_url, data=payload, timeout=(10, 45))
             res_data = res.json()
 
             if "id" not in res_data:
@@ -98,7 +98,7 @@ class MetaGraphAPI:
             
             for attempt in range(1, 15):
                 time.sleep(3)
-                status_res = requests.get(status_url, params=status_params, headers=self._auth_headers(), timeout=15)
+                status_res = requests.get(status_url, params=status_params, headers=self._auth_headers(), timeout=(10, 20))
                 status_data = status_res.json()
                 status_code = status_data.get("status_code")
                 if status_code == "FINISHED" or status_code is None:
@@ -109,7 +109,7 @@ class MetaGraphAPI:
             # 3. Publicação do Container
             publish_url = f"{self.base_url}/{ig_account_id}/media_publish"
             pub_payload = {"creation_id": creation_id, "access_token": self.access_token}
-            pub_res = requests.post(publish_url, data=pub_payload, timeout=30)
+            pub_res = requests.post(publish_url, data=pub_payload, timeout=(10, 45))
             pub_data = pub_res.json()
 
             if "id" not in pub_data:
@@ -136,7 +136,7 @@ class MetaGraphAPI:
                 "access_token": self.access_token
             }
             logger.info(f"Publicando foto na Página do Facebook ({page_id})...")
-            res = requests.post(url, data=payload, timeout=30)
+            res = requests.post(url, data=payload, timeout=(10, 45))
             res_data = res.json()
 
             if "id" not in res_data:

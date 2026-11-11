@@ -1,8 +1,10 @@
 import os
+import asyncio
 import logging
 import platform
 from functools import wraps
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.error import TimedOut, NetworkError
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -111,7 +113,7 @@ async def status_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     gemini_ok = bool(Config.GEMINI_API_KEY and len(Config.GEMINI_API_KEY) > 10)
     blob_ok = bool(Config.AZURE_STORAGE_CONNECTION_STRING)
     meta_configured = meta_api.is_configured()
-    ig_ok = bool(meta_api.get_instagram_business_account_id()) if meta_configured else False
+    ig_ok = bool(await asyncio.to_thread(meta_api.get_instagram_business_account_id)) if meta_configured else False
 
     gemini_status = "✅ Operacional" if gemini_ok else "❌ Não configurada"
     blob_status = "✅ Operacional" if blob_ok else "❌ Não configurada"
@@ -173,6 +175,8 @@ async def promo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def _render_and_send_preview(update: Update, data: dict, tipo: str):
     """Renderiza a imagem correspondente e envia para prévia com botões inline"""
+    image_path = None
+    post_id = None
     try:
         if tipo == "promo":
             image_path = await renderer.render_promo(data)
@@ -202,11 +206,21 @@ async def _render_and_send_preview(update: Update, data: dict, tipo: str):
                 photo=photo,
                 caption=f"👁️ *PRÉVIA DO POST GERADO ({tipo.upper()})*\n\n{caption}",
                 parse_mode="Markdown",
-                reply_markup=reply_markup
+                reply_markup=reply_markup,
+                read_timeout=60,
+                write_timeout=90,
+                connect_timeout=20,
             )
     except Exception as e:
-        logger.error(f"Erro ao renderizar arte: {e}", exc_info=True)
-        await update.message.reply_text(f"❌ *Erro ao renderizar imagem:* `{e}`", parse_mode="Markdown")
+        if post_id:
+            PENDING_POSTS.pop(post_id, None)
+        _cleanup_temp_image(image_path)
+        logger.error(f"Erro ao renderizar ou enviar prévia: {e}", exc_info=True)
+        await update.message.reply_text(f"❌ *Erro ao gerar/enviar prévia:* `{_safe_md(e)}`", parse_mode="Markdown")
+
+def _safe_md(err: object) -> str:
+    """Sanitiza caracteres que quebram blocos inline Markdown no Telegram"""
+    return str(err).replace("`", "'")
 
 def _cleanup_temp_image(image_path: str | None):
     """Remove o arquivo temporário do disco após publicação ou cancelamento"""
@@ -236,15 +250,15 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_caption(caption="⏳ Fazendo upload da imagem para o Azure Blob Storage...")
         
         try:
-            image_url = storage_service.upload_image(post_info["image_path"])
+            image_url = await asyncio.to_thread(storage_service.upload_image, post_info["image_path"])
         except Exception as e:
             logger.error(f"Erro no upload da imagem para a nuvem: {e}")
-            await query.edit_message_caption(caption=f"❌ *Erro no upload da imagem:* `{e}`", parse_mode="Markdown")
+            await query.edit_message_caption(caption=f"❌ *Erro no upload da imagem:* `{_safe_md(e)}`", parse_mode="Markdown")
             return
 
         await query.edit_message_caption(caption="⏳ Imagem na nuvem. Publicando simultaneamente no Instagram e Facebook...")
         
-        res = meta_api.publish_photo(image_url, post_info["caption"])
+        res = await asyncio.to_thread(meta_api.publish_photo, image_url, post_info["caption"])
         
         if res.get("status") in ["success", "simulated"]:
             ig_id = res.get("instagram_id")
@@ -254,12 +268,12 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if ig_id:
                 lines.append(f"📸 *Instagram:* [@passageiro100milhas](https://instagram.com/passageiro100milhas) (`{ig_id}`)")
             elif res.get("instagram_error"):
-                lines.append(f"⚠️ *Instagram:* `{res.get('instagram_error')}`")
+                lines.append(f"⚠️ *Instagram:* `{_safe_md(res.get('instagram_error'))}`")
 
             if fb_id:
                 lines.append(f"📘 *Facebook:* [Página Passageiro 100 Milhas](https://facebook.com/{Config.FB_PAGE_ID}) (`{fb_id}`)")
             elif res.get("facebook_error"):
-                lines.append(f"⚠️ *Facebook:* `{res.get('facebook_error')}`")
+                lines.append(f"⚠️ *Facebook:* `{_safe_md(res.get('facebook_error'))}`")
 
             if res.get("status") == "simulated":
                 lines.append("\n*(Modo Simulação)*")
@@ -267,7 +281,7 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             msg = "\n".join(lines)
             await query.edit_message_caption(caption=msg, parse_mode="Markdown")
         else:
-            await query.edit_message_caption(caption=f"❌ *Erro ao publicar na Meta:* `{res.get('error')}`", parse_mode="Markdown")
+            await query.edit_message_caption(caption=f"❌ *Erro ao publicar na Meta:* `{_safe_md(res.get('error'))}`", parse_mode="Markdown")
             
         _cleanup_temp_image(post_info.get("image_path"))
         del PENDING_POSTS[post_id]
@@ -283,10 +297,10 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("🔍 Recebi sua imagem. Otimizando e analisando com o Google Gemini Vision...")
     
     try:
-        photo_file = await update.message.photo[-1].get_file()
-        image_bytes = await photo_file.download_as_bytearray()
+        photo_file = await update.message.photo[-1].get_file(read_timeout=60, connect_timeout=20)
+        image_bytes = await photo_file.download_as_bytearray(read_timeout=60, connect_timeout=20)
         
-        data, err_msg = gemini_service.extract_from_image(bytes(image_bytes))
+        data, err_msg = await asyncio.to_thread(gemini_service.extract_from_image, bytes(image_bytes))
         
         if data and isinstance(data, dict):
             tipo = data.get("tipo", "trecho")
@@ -295,13 +309,13 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             await update.message.reply_text(
                 f"⚠️ *Não foi possível extrair dados da imagem com o Gemini.*\n\n"
-                f"*Detalhes do erro:* `{err_msg}`\n\n"
+                f"*Detalhes do erro:* `{_safe_md(err_msg)}`\n\n"
                 "Verifique o `/status` para checar as credenciais.",
                 parse_mode="Markdown"
             )
     except Exception as e:
         logger.error(f"Erro em handle_photo: {e}", exc_info=True)
-        await update.message.reply_text(f"❌ *Falha no processamento da imagem:* `{e}`", parse_mode="Markdown")
+        await update.message.reply_text(f"❌ *Falha no processamento da imagem:* `{_safe_md(e)}`", parse_mode="Markdown")
 
 @admin_only
 async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -313,7 +327,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("🤖 Analisando o texto da promoção com o Google Gemini...")
     
     try:
-        data, err_msg = gemini_service.extract_from_text(user_text)
+        data, err_msg = await asyncio.to_thread(gemini_service.extract_from_text, user_text)
         
         if data and isinstance(data, dict):
             tipo = data.get("tipo", "promo")
@@ -322,12 +336,20 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             await update.message.reply_text(
                 f"⚠️ *Não foi possível interpretar o texto.*\n\n"
-                f"*Detalhes do erro:* `{err_msg}`",
+                f"*Detalhes do erro:* `{_safe_md(err_msg)}`",
                 parse_mode="Markdown"
             )
     except Exception as e:
         logger.error(f"Erro em handle_text: {e}", exc_info=True)
-        await update.message.reply_text(f"❌ *Falha no processamento do texto:* `{e}`", parse_mode="Markdown")
+        await update.message.reply_text(f"❌ *Falha no processamento do texto:* `{_safe_md(e)}`", parse_mode="Markdown")
+
+async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
+    """Registra erros globais do bot (incluindo TimedOut/NetworkError transientes)"""
+    err = context.error
+    if isinstance(err, (TimedOut, NetworkError)):
+        logger.warning(f"Erro transitório de rede no Telegram: {err}")
+    else:
+        logger.error(f"Erro não tratado no bot Telegram: {err}", exc_info=err)
 
 def setup_telegram_bot() -> Application:
     """Inicializa o bot do Telegram com todos os handlers e verificações"""
@@ -336,7 +358,19 @@ def setup_telegram_bot() -> Application:
         logger.warning("TELEGRAM_BOT_TOKEN não configurado no .env")
         return None
         
-    app = Application.builder().token(token).build()
+    app = (
+        Application.builder()
+        .token(token)
+        .connect_timeout(20.0)
+        .read_timeout(60.0)
+        .write_timeout(60.0)
+        .media_write_timeout(120.0)
+        .pool_timeout(15.0)
+        .get_updates_connect_timeout(15.0)
+        .get_updates_read_timeout(45.0)
+        .get_updates_pool_timeout(15.0)
+        .build()
+    )
     
     app.add_handler(CommandHandler("start", start_command))
     app.add_handler(CommandHandler("status", status_command))
@@ -345,5 +379,6 @@ def setup_telegram_bot() -> Application:
     app.add_handler(CallbackQueryHandler(callback_handler))
     app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
+    app.add_error_handler(error_handler)
     
     return app

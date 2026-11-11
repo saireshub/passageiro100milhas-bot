@@ -5,6 +5,7 @@ import shutil
 import asyncio
 import tempfile
 import logging
+import threading
 from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
 from config import Config
@@ -18,6 +19,7 @@ class HeadlessRenderer:
         self.env = Environment(loader=FileSystemLoader(Config.TEMPLATES_DIR), autoescape=True)
         self.chromium_binary = self._find_chromium_binary()
         self._bg_index: int | None = None
+        self._bg_lock = threading.Lock()
         self._local_state_file = os.path.join(Config.OUTPUT_DIR, ".bg_index")
 
     def _find_chromium_binary(self) -> str:
@@ -74,35 +76,36 @@ class HeadlessRenderer:
         if not bg_files:
             return None
 
-        if self._bg_index is None:
-            saved_val = None
-            if storage_service.is_configured:
-                saved_val = storage_service.get_state_value(STATE_BLOB_NAME)
-            if saved_val is None and os.path.exists(self._local_state_file):
+        with self._bg_lock:
+            if self._bg_index is None:
+                saved_val = None
+                if storage_service.is_configured:
+                    saved_val = storage_service.get_state_value(STATE_BLOB_NAME)
+                if saved_val is None and os.path.exists(self._local_state_file):
+                    try:
+                        with open(self._local_state_file, "r", encoding="utf-8") as f:
+                            saved_val = f.read().strip()
+                    except Exception:
+                        pass
                 try:
-                    with open(self._local_state_file, "r", encoding="utf-8") as f:
-                        saved_val = f.read().strip()
-                except Exception:
-                    pass
+                    self._bg_index = int(saved_val) % len(bg_files) if saved_val is not None else 0
+                except ValueError:
+                    self._bg_index = 0
+
+            selected_path = bg_files[self._bg_index]
+            logger.info(f"Foto de fundo selecionada ({self._bg_index + 1}/{len(bg_files)}): {os.path.basename(selected_path)}")
+
+            next_index = (self._bg_index + 1) % len(bg_files)
+            self._bg_index = next_index
+
             try:
-                self._bg_index = int(saved_val) % len(bg_files) if saved_val is not None else 0
-            except ValueError:
-                self._bg_index = 0
+                with open(self._local_state_file, "w", encoding="utf-8") as f:
+                    f.write(str(next_index))
+            except Exception:
+                pass
 
-        selected_path = bg_files[self._bg_index]
-        logger.info(f"Foto de fundo selecionada ({self._bg_index + 1}/{len(bg_files)}): {os.path.basename(selected_path)}")
-
-        next_index = (self._bg_index + 1) % len(bg_files)
-        self._bg_index = next_index
-
-        try:
-            with open(self._local_state_file, "w", encoding="utf-8") as f:
-                f.write(str(next_index))
-        except Exception:
-            pass
-
-        if storage_service.is_configured:
-            storage_service.set_state_value(STATE_BLOB_NAME, str(next_index))
+            if storage_service.is_configured:
+                storage_service.set_state_value(STATE_BLOB_NAME, str(next_index))
 
         return Path(selected_path).resolve().as_uri()
 
@@ -110,7 +113,7 @@ class HeadlessRenderer:
         """Renderiza o template de Alerta de Trecho em imagem PNG (1080x1350)"""
         render_data = dict(data)
         if not render_data.get("imagem_fundo_url"):
-            bg_uri = self._get_next_background_uri()
+            bg_uri = await asyncio.to_thread(self._get_next_background_uri)
             if bg_uri:
                 render_data["imagem_fundo_url"] = bg_uri
 
@@ -155,6 +158,21 @@ class HeadlessRenderer:
         cmd.append(html_url)
         return cmd
 
+    async def _run_chromium(self, cmd: list[str], timeout: float = 45.0) -> tuple[int, str]:
+        """Executa o Chromium headless com timeout para evitar travamentos na captura"""
+        process = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        try:
+            _, stderr = await asyncio.wait_for(process.communicate(), timeout=timeout)
+        except asyncio.TimeoutError as exc:
+            process.kill()
+            await process.wait()
+            raise TimeoutError(f"Chromium headless excedeu {int(timeout)}s ao gerar a imagem.") from exc
+        return process.returncode, stderr.decode("utf-8", errors="replace").strip()
+
     async def _capture_screenshot(self, html_content: str, output_path: str):
         """Salva um HTML temporário e executa a captura headless via Chromium CLI no Linux e Windows"""
         with tempfile.NamedTemporaryFile("w", delete=False, suffix=".html", encoding="utf-8") as temp_file:
@@ -167,29 +185,16 @@ class HeadlessRenderer:
         try:
             temp_html_url = Path(temp_html_path).resolve().as_uri()
             cmd = self._build_chromium_cmd("--headless=new", user_data_dir, output_path, temp_html_url)
+            returncode, err_text = await self._run_chromium(cmd)
 
-            process = await asyncio.create_subprocess_exec(
-                *cmd,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
-            )
-            stdout, stderr = await process.communicate()
+            if returncode != 0:
+                logger.warning(f"Tentativa 1 com --headless=new falhou (código {returncode}): {err_text}. Tentando fallback clássico...")
 
-            if process.returncode != 0:
-                err_text = stderr.decode("utf-8", errors="replace").strip()
-                logger.warning(f"Tentativa 1 com --headless=new falhou (código {process.returncode}): {err_text}. Tentando fallback clássico...")
-                
                 cmd_fallback = self._build_chromium_cmd("--headless", user_data_dir, output_path, temp_html_url)
-                process2 = await asyncio.create_subprocess_exec(
-                    *cmd_fallback,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE
-                )
-                stdout2, stderr2 = await process2.communicate()
-                
-                if process2.returncode != 0:
-                    err_text2 = stderr2.decode("utf-8", errors="replace").strip()
-                    logger.error(f"Falha também no fallback Chromium CLI (código {process2.returncode}): {err_text2}")
+                returncode2, err_text2 = await self._run_chromium(cmd_fallback)
+
+                if returncode2 != 0:
+                    logger.error(f"Falha também no fallback Chromium CLI (código {returncode2}): {err_text2}")
                     raise RuntimeError(f"Falha ao gerar imagem via Chromium CLI: {err_text2 or err_text}")
 
             logger.info(f"Imagem gerada com sucesso em: {output_path}")

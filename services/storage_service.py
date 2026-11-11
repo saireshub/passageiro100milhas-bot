@@ -1,5 +1,6 @@
 import os
 import logging
+import threading
 from datetime import datetime, timedelta, timezone
 from config import Config
 
@@ -10,6 +11,7 @@ class StorageService:
         self.connection_string = Config.AZURE_STORAGE_CONNECTION_STRING
         self.container_name = Config.AZURE_STORAGE_CONTAINER_NAME or "posts"
         self._blob_service_client = None
+        self._client_lock = threading.Lock()
 
     @property
     def is_configured(self) -> bool:
@@ -17,19 +19,24 @@ class StorageService:
         return bool(self.connection_string and not self.connection_string.startswith("sua_"))
 
     def _get_client(self):
-        """Inicializa e retorna o cliente do Azure Blob Storage sob demanda"""
+        """Inicializa e retorna o cliente do Azure Blob Storage sob demanda com segurança de thread"""
         if self._blob_service_client is None and self.is_configured:
-            try:
-                from azure.storage.blob import BlobServiceClient
-                self._blob_service_client = BlobServiceClient.from_connection_string(self.connection_string)
-                # Garante que o container exista
-                container_client = self._blob_service_client.get_container_client(self.container_name)
-                if not container_client.exists():
-                    logger.info(f"Container '{self.container_name}' não existia no Azure Blob. Criando container...")
-                    container_client.create_container()
-            except Exception as e:
-                logger.error(f"Erro ao inicializar Azure Blob Storage Client: {e}")
-                self._blob_service_client = None
+            with self._client_lock:
+                if self._blob_service_client is None:
+                    try:
+                        from azure.storage.blob import BlobServiceClient
+                        self._blob_service_client = BlobServiceClient.from_connection_string(
+                            self.connection_string,
+                            connection_timeout=10,
+                            read_timeout=30,
+                        )
+                        container_client = self._blob_service_client.get_container_client(self.container_name)
+                        if not container_client.exists(timeout=15):
+                            logger.info(f"Container '{self.container_name}' não existia no Azure Blob. Criando container...")
+                            container_client.create_container(timeout=15)
+                    except Exception as e:
+                        logger.error(f"Erro ao inicializar Azure Blob Storage Client: {e}")
+                        self._blob_service_client = None
         return self._blob_service_client
 
     def upload_image(self, file_path: str, custom_blob_name: str | None = None) -> str:
@@ -59,7 +66,8 @@ class StorageService:
                 blob_client.upload_blob(
                     data,
                     overwrite=True,
-                    content_settings=ContentSettings(content_type="image/png")
+                    content_settings=ContentSettings(content_type="image/png"),
+                    timeout=30,
                 )
             logger.info(f"Upload concluído no Azure Blob: {blob_name}")
 
@@ -89,9 +97,9 @@ class StorageService:
             return None
         try:
             blob_client = client.get_blob_client(container=self.container_name, blob=blob_name)
-            if not blob_client.exists():
+            if not blob_client.exists(timeout=15):
                 return None
-            return blob_client.download_blob().readall().decode("utf-8").strip()
+            return blob_client.download_blob(timeout=15).readall().decode("utf-8").strip()
         except Exception as e:
             logger.warning(f"Não foi possível ler estado '{blob_name}' no Blob Storage: {e}")
             return None
@@ -103,7 +111,7 @@ class StorageService:
             return False
         try:
             blob_client = client.get_blob_client(container=self.container_name, blob=blob_name)
-            blob_client.upload_blob(value.encode("utf-8"), overwrite=True)
+            blob_client.upload_blob(value.encode("utf-8"), overwrite=True, timeout=15)
             return True
         except Exception as e:
             logger.warning(f"Não foi possível salvar estado '{blob_name}' no Blob Storage: {e}")
