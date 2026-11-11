@@ -18,6 +18,7 @@
 - [ ] Implementar fluxo de conversa guiada (`ConversationHandler`) passo a passo para o comando `/promo`.
 - [ ] Refinar extração OCR via Google Gemini para capturas de tela dos programas Smiles e Livelo.
 - [ ] Adicionar botão de "Editar dados" no teclado inline de prévia antes de confirmar a publicação.
+- [ ] Provisionar banco PostgreSQL (Azure Database for PostgreSQL Flexible Server na cota gratuita de 12 meses, com migração planejada para Supabase/VPS) para persistir o histórico de posts publicados.
 
 ### Fase 3: Monitoramento Contínuo
 - [ ] Acompanhar métricas de consumo de CPU/Memória no painel do Azure Container Apps.
